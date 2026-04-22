@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neumo Admin Toolkit</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0A1128; font-family: 'Source Sans 3', sans-serif; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #252E4A; border-radius: 3px; }
+  input::placeholder, textarea::placeholder { color: #9BA3BF; opacity: 0.6; }
+  select, input, textarea { outline: none; }
+  input:focus, textarea:focus, select:focus { border-color: #775ED3 !important; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #775ED3; color: #F7F2F9; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; z-index: 9999; animation: fadeInOut 2s ease; pointer-events: none; }
+  @keyframes fadeInOut { 0% { opacity: 0; transform: translateY(10px); } 15% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useEffect, useRef } = React;
+
+/* ───────── Brand tokens ───────── */
+const B = {
+  navy:"#0A1128", purple:"#775ED3", lilac:"#DACDF2", coolWhite:"#F7F2F9",
+  sunflower:"#EFE745", gradA:"#AEA7F4", gradB:"#7349F3",
+  navyLight:"#131B38", navyMid:"#1A2444", border:"#252E4A", textMuted:"#9BA3BF",
+};
+const BLURB_CAP = 150;
+
+/* ── Toast helper ── */
+function showToast(msg) {
+  const el = document.createElement("div");
+  el.className = "toast"; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2100);
+}
+function copyText(text, label) {
+  navigator.clipboard.writeText(text).then(() => showToast(label || "Copied to clipboard"));
+}
+
+/* ═══════════ SHARED UI ═══════════ */
+function Pill({children,color,bg}){return <span style={{fontSize:10,fontWeight:600,letterSpacing:"0.04em",padding:"2px 8px",borderRadius:3,background:bg||"rgba(255,255,255,0.05)",color:color||B.textMuted,textTransform:"uppercase",whiteSpace:"nowrap"}}>{children}</span>;}
+function Tag({children,color}){return <span style={{fontSize:10,padding:"1px 6px",borderRadius:3,background:"rgba(119,94,211,0.08)",color:color||B.lilac,fontFamily:"'Source Code Pro',monospace"}}>{children}</span>;}
+function Btn({children,primary,small,onClick,disabled,style:sx,...r}){return <button onClick={onClick} disabled={disabled} style={{padding:small?"5px 12px":"8px 18px",borderRadius:5,fontSize:small?11:12,fontWeight:600,border:primary?`1px solid ${B.purple}`:`1px solid ${B.border}`,background:primary?"rgba(119,94,211,0.15)":"transparent",color:primary?B.lilac:B.textMuted,cursor:disabled?"default":"pointer",fontFamily:"'Source Sans 3',sans-serif",transition:"all 0.15s",opacity:disabled?0.35:1,...sx}} {...r}>{children}</button>;}
+function Sel({value,onChange,placeholder,options}){return <select value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"8px 10px",borderRadius:5,border:`1px solid ${B.border}`,background:B.navyMid,color:value?B.coolWhite:B.textMuted,fontSize:12,fontFamily:"'Source Sans 3',sans-serif",cursor:"pointer"}}><option value="">{placeholder}</option>{options.map(o=><option key={o} value={o}>{o}</option>)}</select>;}
+function Inp({value,onChange,placeholder,multi,style:sx}){const T=multi?"textarea":"input";return <T value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={multi?3:undefined} style={{width:"100%",padding:"8px 10px",borderRadius:5,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:12,fontFamily:"'Source Sans 3',sans-serif",resize:multi?"vertical":"none",...sx}}/>;}
+function ToolHeader({title,subtitle,version,onBack}){return <div style={{padding:"16px 24px",borderBottom:`1px solid ${B.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:12}}><button onClick={onBack} style={{background:"none",border:"none",color:B.textMuted,cursor:"pointer",fontSize:18,padding:0}}>←</button><div><div style={{fontWeight:700,fontSize:16,color:B.coolWhite}}>{title}</div><div style={{fontSize:11,color:B.textMuted,fontFamily:"'Source Code Pro',monospace"}}>{subtitle}</div></div></div><Pill color={B.navy} bg={B.sunflower}>{version}</Pill></div>;}
+function stripHtml(s){return s?s.replace(/<[^>]*>/g,"").replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/\s+/g," ").trim():"";}
+function truncate(s,m){if(!s)return"";return s.length<=m?s:s.slice(0,m-1).replace(/\s+\S*$/,"")+"…";}
+
+/* ═══════════ TOOL REGISTRY ═══════════ */
+const PA_FLOW_URL1 = "https://make.powerautomate.com/environments/Default-a9e33a0c-eb1a-4d9e-b6e1-c6134543fc03/solutions/~preferred/flows/fbb265d8-208e-12ab-419e-3ff8e6a2ddc9/details"; /* Teams flow */
+const PA_FLOW_URL2 = "https://make.powerautomate.com/environments/Default-a9e33a0c-eb1a-4d9e-b6e1-c6134543fc03/flows/8b700e74-b037-56ed-3a09-c93469dba894/details"; /* Outlook flow */
+const PA_FLOW_URL3 = "https://make.powerautomate.com/environments/Default-a9e33a0c-eb1a-4d9e-b6e1-c6134543fc03/solutions/~preferred/flows/87da3897-83ae-45a8-fd7d-fa8e04fe44e7/details"; /* Combine flow */
+
+const TOOLS = [
+  { id:"soql-builder", name:"SOQL Query Builder", category:"Data & Migration", status:"built", platform:"Toolkit", priority:"High", effort:"Medium",
+    description:"Visual SOQL builder with preset field selections for Account, Contact, and Opportunity. Migration, Audit, Cleanup, and CPQ presets.",
+    tags:["data","migration","query","soql"], details:"Presets auto-select field groups. Upload SF Inspector field metadata to add custom fields. WHERE clause builder with common operators." },
+  { id:"change-doc", name:"Change Documentation Generator", category:"Documentation", status:"built", platform:"Toolkit", priority:"High", effort:"Medium",
+    description:"Guided flow to capture system changes and auto-generate formatted documentation. Single and batch modes feed the weekly Admin Newsletter.",
+    tags:["documentation","change management","newsletter","admin request"], details:"Single mode: guided form. Batch mode: paste Admin Request CSV export from Salesforce Inspector. Newsletter groups by Area with 150-char blurbs in Neumo brand voice." },
+  { id:"pa-teams-request", name:"Teams → Admin Request", category:"Automation", status:"built", platform:"Power Automate", priority:"High", effort:"Low",
+    description:"Right-click a Teams message to generate an Admin Request CSV. Parses sender, content, and timestamp into the Admin Request field format.",
+    tags:["power automate","teams","admin request","automation"], details:"Trigger: Teams message action. Generates CSV in SharePoint Admin Request Repository. Fields mapped: Title, Description, Requestor. Run from Teams context menu.",
+    externalUrl: PA_FLOW_URL1 },
+  { id:"pa-outlook-request", name:"Outlook → Admin Request", category:"Automation", status:"built", platform:"Power Automate", priority:"High", effort:"Low",
+    description:"Forward an email to generate an Admin Request CSV. Subject becomes Title, body becomes Description, sender becomes Requestor.",
+    tags:["power automate","outlook","admin request","automation"], details:"Trigger: Email to shared mailbox. Generates CSV in SharePoint Admin Request Repository. Maps subject, body, sender, and timestamp.",
+    externalUrl: PA_FLOW_URL2 },
+  { id:"pa-combine-csv", name:"Combine Admin Request CSVs", category:"Automation", status:"built", platform:"Power Automate", priority:"Medium", effort:"Low",
+    description:"Merges all Admin Request CSVs in the repository into a single file for batch import. Renames originals with MERGED_ prefix.",
+    tags:["power automate","csv","batch","admin request"], details:"Reads all CSVs from the repository folder, strips duplicate headers, combines into one timestamped file, prefixes originals with MERGED_ for easy cleanup. Run manually from Power Automate.",
+    externalUrl: PA_FLOW_URL3 },
+  { id:"admin-newsletter", name:"Weekly Admin Newsletter", category:"Documentation", status:"planned", platform:"Cowork + Toolkit", priority:"High", effort:"Medium", description:"Auto-generates a weekly org-wide email summarizing all Salesforce changes from closed Admin Requests.", tags:["newsletter","communication","admin request"], details:"Export closed Admin Requests → classify by area → generate summaries → format as newsletter." },
+  { id:"migration-validator", name:"Migration Validation Dashboard", category:"Data & Migration", status:"planned", platform:"Toolkit", priority:"Medium", effort:"Medium", description:"Upload source vs. target CSVs for visual diff report with confidence scoring.", tags:["migration","validation","csv"], details:"Compares record counts, field completeness, value distributions." },
+  { id:"cpq-troubleshooter", name:"CPQ Troubleshoot Tree", category:"Troubleshooting", status:"planned", platform:"Toolkit", priority:"Medium", effort:"Low", description:"Interactive diagnostic flowchart for CPQ issues.", tags:["cpq","troubleshooting","dlrs"], details:"Clickable decision nodes lead to resolution steps." },
+  { id:"permset-compare", name:"Permission Set Comparator", category:"Security & Access", status:"planned", platform:"Toolkit", priority:"Medium", effort:"Low", description:"Upload two permission set exports for a visual delta.", tags:["permissions","security","fls"], details:"SF Inspector exports. Color-coded diff." },
+  { id:"fls-audit", name:"Field-Level Security Audit", category:"Security & Access", status:"planned", platform:"Toolkit", priority:"Low", effort:"Medium", description:"Matrix view of field visibility across profiles and permission sets.", tags:["fls","security","audit"], details:"Upload profile/permset metadata. Heat map of access." },
+  { id:"sfdmu-config", name:"SFDMU Config Generator", category:"Data & Migration", status:"planned", platform:"Claude Code", priority:"Medium", effort:"Low", description:"Generate export.json configs from plain-English descriptions.", tags:["sfdmu","migration","config"], details:"Templatizes past patterns." },
+  { id:"flow-scaffolder", name:"Flow Metadata Scaffolder", category:"Development", status:"planned", platform:"Claude Code", priority:"Low", effort:"Medium", description:"Describe a Flow, get metadata XML.", tags:["flow","development","metadata"], details:"Generates deployable Flow XML." },
+  { id:"org-context", name:"Neumo Org Context Skill", category:"Skills & Context", status:"planned", platform:"Claude Skill", priority:"High", effort:"Medium", description:"Preloads Neumo's object model and migration history.", tags:["skill","context","org"], details:"Object inventory, naming conventions, org mapping." },
+  { id:"migration-playbook", name:"Migration Playbook Skill", category:"Skills & Context", status:"planned", platform:"Claude Skill", priority:"Medium", effort:"Low", description:"Guided phased migration approach.", tags:["skill","migration","playbook"], details:"Checklists, pitfalls, tool recommendations." },
+  { id:"apex-test-gen", name:"Apex Test Class Generator", category:"Development", status:"planned", platform:"Claude Code", priority:"Low", effort:"Low", description:"Admin-friendly Apex test classes.", tags:["apex","testing","development"], details:"Clear inline comments for admin-level readers." },
+];
+const CATEGORIES=[...new Set(TOOLS.map(t=>t.category))];
+const STATUS_CFG={built:{label:"Built",color:"#22c55e",bg:"rgba(34,197,94,0.12)"},"in-progress":{label:"In Progress",color:B.sunflower,bg:"rgba(239,231,69,0.10)"},planned:{label:"Planned",color:B.textMuted,bg:"rgba(155,163,191,0.10)"}};
+const PRI_CLR={High:B.sunflower,Medium:B.purple,Low:B.textMuted};
+
+/* ═══════════ SOQL PRESETS ═══════════ */
+const SOQL_OBJECTS = {
+  Account: {
+    standard: ["Id","Name","OwnerId","RecordTypeId","ParentId","Type","Industry","Website","Phone","Fax","BillingStreet","BillingCity","BillingState","BillingPostalCode","BillingCountry","ShippingStreet","ShippingCity","ShippingState","ShippingPostalCode","ShippingCountry","Description","NumberOfEmployees","AnnualRevenue","CreatedById","CreatedDate","LastModifiedById","LastModifiedDate","LastActivityDate","IsDeleted"],
+    presets: {
+      Migration:{label:"Migration",color:"#22c55e",fields:["Id","Name","OwnerId","RecordTypeId","ParentId","Type","Industry","Website","Phone","BillingStreet","BillingCity","BillingState","BillingPostalCode","BillingCountry","ShippingStreet","ShippingCity","ShippingState","ShippingPostalCode","ShippingCountry","Description","NumberOfEmployees","AnnualRevenue","CreatedDate","LastModifiedDate"]},
+      Audit:{label:"Audit",color:B.purple,fields:["Id","Name","OwnerId","RecordTypeId","CreatedById","CreatedDate","LastModifiedById","LastModifiedDate","LastActivityDate"]},
+      Cleanup:{label:"Cleanup",color:B.sunflower,fields:["Id","Name","Phone","Website","BillingStreet","BillingCity","BillingState","BillingPostalCode","Industry","Type","Description","ParentId","OwnerId"]},
+      CPQ:{label:"CPQ",color:"#f97316",fields:["Id","Name","SBQQ__RenewalModel__c","SBQQ__RenewalPricingMethod__c","SBQQ__PreserveBundleStructureUponRenewals__c","SBQQ__ContractCoTermination__c","SBQQ__DefaultOpportunity__c","SBQQ__AssetQuantitiesCombined__c","SBQQ__IgnoreParentContractedPrices__c"]},
+    }
+  },
+  Contact: {
+    standard: ["Id","FirstName","LastName","Name","Email","Phone","MobilePhone","AccountId","OwnerId","RecordTypeId","Title","Department","MailingStreet","MailingCity","MailingState","MailingPostalCode","MailingCountry","OtherStreet","OtherCity","OtherState","OtherPostalCode","OtherCountry","Birthdate","Description","LeadSource","CreatedById","CreatedDate","LastModifiedById","LastModifiedDate","LastActivityDate","IsDeleted"],
+    presets: {
+      Migration:{label:"Migration",color:"#22c55e",fields:["Id","FirstName","LastName","Name","Email","Phone","MobilePhone","AccountId","OwnerId","RecordTypeId","Title","Department","MailingStreet","MailingCity","MailingState","MailingPostalCode","MailingCountry","LeadSource","CreatedDate","LastModifiedDate"]},
+      Audit:{label:"Audit",color:B.purple,fields:["Id","Name","Email","AccountId","OwnerId","RecordTypeId","CreatedById","CreatedDate","LastModifiedById","LastModifiedDate","LastActivityDate"]},
+      Cleanup:{label:"Cleanup",color:B.sunflower,fields:["Id","FirstName","LastName","Email","Phone","MobilePhone","AccountId","Title","Department","MailingStreet","MailingCity","MailingState","MailingPostalCode","Description"]},
+      CPQ:{label:"CPQ",color:"#f97316",fields:["Id","Name","Email","AccountId","SBQQ__TaxExempt__c","SBQQ__AdditionalEmail__c"]},
+    }
+  },
+  Opportunity: {
+    standard: ["Id","Name","AccountId","OwnerId","RecordTypeId","StageName","Amount","Probability","CloseDate","Type","LeadSource","NextStep","Description","IsClosed","IsWon","ForecastCategory","ForecastCategoryName","CampaignId","ContractId","CreatedById","CreatedDate","LastModifiedById","LastModifiedDate","LastActivityDate","IsDeleted"],
+    presets: {
+      Migration:{label:"Migration",color:"#22c55e",fields:["Id","Name","AccountId","OwnerId","RecordTypeId","StageName","Amount","Probability","CloseDate","Type","LeadSource","Description","ContractId","CampaignId","CreatedDate","LastModifiedDate"]},
+      Audit:{label:"Audit",color:B.purple,fields:["Id","Name","AccountId","OwnerId","RecordTypeId","StageName","Amount","CloseDate","IsClosed","IsWon","CreatedById","CreatedDate","LastModifiedById","LastModifiedDate","LastActivityDate"]},
+      Cleanup:{label:"Cleanup",color:B.sunflower,fields:["Id","Name","StageName","Amount","CloseDate","AccountId","Type","LeadSource","Description","NextStep","IsClosed","Probability"]},
+      CPQ:{label:"CPQ",color:"#f97316",fields:["Id","Name","AccountId","StageName","Amount","CloseDate","SBQQ__PrimaryQuote__c","SBQQ__RenewedContract__c","SBQQ__Renewed__c","SBQQ__AmendedContract__c","SBQQ__Contracted__c","SBQQ__QuotePricebookId__c","SBQQ__OrderGroupID__c","SBQQ__PaymentTerm__c"]},
+    }
+  }
+};
+const WHERE_OPS=[{label:"=",value:"="},{label:"!=",value:"!="},{label:"LIKE",value:"LIKE"},{label:">",value:">"},{label:"<",value:"<"},{label:">=",value:">="},{label:"<=",value:"<="},{label:"IN",value:"IN"},{label:"NOT IN",value:"NOT IN"},{label:"= null",value:"= null"},{label:"!= null",value:"!= null"},{label:"= TRUE",value:"= TRUE"},{label:"= FALSE",value:"= FALSE"}];
+const DATE_LITERALS=["TODAY","YESTERDAY","LAST_WEEK","THIS_WEEK","LAST_MONTH","THIS_MONTH","LAST_QUARTER","THIS_QUARTER","LAST_YEAR","THIS_YEAR","LAST_N_DAYS:7","LAST_N_DAYS:30","LAST_N_DAYS:90"];
+
+/* ═══════════ FINDER ═══════════ */
+const FINDER_Q=[{id:"goal",question:"What are you trying to accomplish?",options:[{label:"Query or extract data",value:"data-extract",icon:"⚡"},{label:"Validate or compare data",value:"data-validate",icon:"🔍"},{label:"Migrate or move records",value:"migrate",icon:"📦"},{label:"Troubleshoot an issue",value:"troubleshoot",icon:"🔧"},{label:"Document a change",value:"document",icon:"📝"},{label:"Review security/access",value:"security",icon:"🔒"},{label:"Build or automate",value:"build",icon:"⚙️"},{label:"Submit an admin request",value:"request",icon:"📋"}]},{id:"input",question:"What do you have as input?",options:[{label:"CSV / Excel export",value:"csv",icon:"📊"},{label:"Object or field names",value:"metadata",icon:"🏷️"},{label:"A problem description",value:"description",icon:"💬"},{label:"Admin Request records",value:"admin-request",icon:"📋"},{label:"A Teams or Outlook message",value:"message",icon:"💬"},{label:"Starting fresh",value:"none",icon:"✨"}]}];
+const RECS={"data-extract":{csv:["soql-builder","migration-validator"],metadata:["soql-builder","fls-audit"],description:["soql-builder"],"admin-request":["soql-builder"],message:["soql-builder"],none:["soql-builder","org-context"]},"data-validate":{csv:["migration-validator","permset-compare"],metadata:["fls-audit","permset-compare"],description:["migration-validator"],"admin-request":["migration-validator"],message:["migration-validator"],none:["migration-validator"]},migrate:{csv:["sfdmu-config","migration-validator","migration-playbook"],metadata:["sfdmu-config","soql-builder","migration-playbook"],description:["migration-playbook","sfdmu-config"],"admin-request":["migration-playbook"],message:["migration-playbook"],none:["migration-playbook","sfdmu-config","org-context"]},troubleshoot:{csv:["cpq-troubleshooter","migration-validator"],metadata:["cpq-troubleshooter","fls-audit"],description:["cpq-troubleshooter"],"admin-request":["cpq-troubleshooter"],message:["cpq-troubleshooter"],none:["cpq-troubleshooter","org-context"]},document:{csv:["change-doc","admin-newsletter"],metadata:["change-doc"],description:["change-doc","admin-newsletter"],"admin-request":["admin-newsletter","change-doc"],message:["change-doc"],none:["change-doc"]},security:{csv:["permset-compare","fls-audit"],metadata:["fls-audit","permset-compare"],description:["fls-audit","permset-compare"],"admin-request":["fls-audit"],message:["fls-audit"],none:["fls-audit","permset-compare"]},build:{csv:["sfdmu-config"],metadata:["flow-scaffolder","apex-test-gen"],description:["flow-scaffolder","apex-test-gen","org-context"],"admin-request":["flow-scaffolder"],message:["flow-scaffolder"],none:["flow-scaffolder","org-context","apex-test-gen"]},request:{csv:["pa-combine-csv"],metadata:["pa-teams-request","pa-outlook-request"],description:["pa-teams-request","pa-outlook-request"],"admin-request":["pa-combine-csv"],message:["pa-teams-request","pa-outlook-request"],none:["pa-teams-request","pa-outlook-request"]}};
+
+/* ═══════════ CSV PARSER ═══════════ */
+const AR_FIELD_MAP={name:["Name"],title:["Title__c"],area:["Area__c"],feature:["Feature__c"],description:["Description__c"],resolution:["Resolution__c"],adminNotes:["Admin_Notes__c"],status:["Request_Status__c"],completedDate:["Completed_Date__c"],assignedTo:["Assigned_To__c"],severity:["Severity__c"],priority:["Priority__c"],effort:["Level_of_Effort__c"],department:["Department__c"],scope:["Scope__c"],impact:["Business_Impact__c"]};
+function parseCsvRows(text){const result=[];const rows=text.split(/\r?\n/);for(const row of rows){const cells=[];let cur="",inQ=false;for(let i=0;i<row.length;i++){const ch=row[i];if(ch==='"'){if(inQ&&row[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}else if(ch===","&&!inQ){cells.push(cur);cur="";}else cur+=ch;}cells.push(cur);if(cells.some(c=>c.trim()))result.push(cells);}return result;}
+function parseAdminRequestCSV(text){const allRows=parseCsvRows(text);if(allRows.length===0)return {entries:[],errors:["Empty CSV"]};const headerRow=allRows[0];const dataRows=allRows.slice(1);const headers=headerRow.map(h=>h.trim().replace(/^"|"$/g,""));const colMap={};for(const[key,aliases]of Object.entries(AR_FIELD_MAP)){for(const alias of aliases){const idx=headers.findIndex(h=>h===alias||h===alias.replace(/__c$/i,"")||h.toLowerCase()===alias.toLowerCase());if(idx>=0){colMap[key]=idx;break;}}}const entries=[];for(const cells of dataRows){const get=(key)=>{const idx=colMap[key];return idx!==undefined?(cells[idx]||"").replace(/^"|"$/g,"").trim():"";};const status=get("status");if(status&&status.toLowerCase()!=="closed")continue;const title=get("title")||get("name")||"Untitled";const desc=stripHtml(get("description"));const resolution=stripHtml(get("resolution"));const notes=stripHtml(get("adminNotes"));const area=get("area")||"General";const feature=get("feature");const rawBlurb=resolution||desc||notes||"";entries.push({id:Date.now()+Math.random(),requestId:get("name"),title,area,feature,description:desc,resolution,adminNotes:notes,blurb:truncate(rawBlurb,BLURB_CAP),completedDate:get("completedDate"),assignedTo:get("assignedTo"),severity:get("severity"),priority:get("priority"),effort:get("effort"),department:get("department"),scope:get("scope"),impact:get("impact")});}return {entries,errors:[],colMap,headers};}
+
+/* ═══════════ SOQL BUILDER ═══════════ */
+function SOQLBuilder({onBack}) {
+  const [obj,setObj]=useState("Account");
+  const [selectedFields,setSelectedFields]=useState(new Set(SOQL_OBJECTS.Account.presets.Migration.fields));
+  const [activePreset,setActivePreset]=useState("Migration");
+  const [customFields,setCustomFields]=useState([]);
+  const [customInput,setCustomInput]=useState("");
+  const [metadataText,setMetadataText]=useState("");
+  const [parsedMeta,setParsedMeta]=useState(null);
+  const [whereClauses,setWhereClauses]=useState([]);
+  const [orderBy,setOrderBy]=useState("");
+  const [orderDir,setOrderDir]=useState("ASC");
+  const [limit,setLimit]=useState("");
+  const [showMeta,setShowMeta]=useState(false);
+
+  const objDef=SOQL_OBJECTS[obj];
+  const allFields=[...objDef.standard,...customFields];
+
+  const switchObject=(o)=>{setObj(o);setSelectedFields(new Set(SOQL_OBJECTS[o].presets.Migration.fields));setActivePreset("Migration");setCustomFields([]);setWhereClauses([]);setOrderBy("");setLimit("");};
+  const applyPreset=(k)=>{const p=objDef.presets[k];if(!p)return;const n=new Set(p.fields);customFields.forEach(f=>{if(selectedFields.has(f))n.add(f);});setSelectedFields(n);setActivePreset(k);};
+  const toggleField=(f)=>{const n=new Set(selectedFields);n.has(f)?n.delete(f):n.add(f);setSelectedFields(n);setActivePreset(null);};
+  const addCustomField=()=>{const fs=customInput.split(/[,\n]+/).map(f=>f.trim()).filter(f=>f&&!allFields.includes(f));if(fs.length){setCustomFields(p=>[...p,...fs]);const n=new Set(selectedFields);fs.forEach(f=>n.add(f));setSelectedFields(n);setCustomInput("");}};
+  const parseMetadata=()=>{if(!metadataText.trim())return;const lines=metadataText.split(/\r?\n/).filter(l=>l.trim());const nf=[];for(const line of lines){const parts=line.split(/[,\t]/);for(const part of parts){const c=part.trim().replace(/^"|"$/g,"");if(c&&(c.endsWith("__c")||c.endsWith("__r"))&&!allFields.includes(c)&&!nf.includes(c))nf.push(c);}}if(nf.length){setCustomFields(p=>[...p,...nf]);const n=new Set(selectedFields);nf.forEach(f=>n.add(f));setSelectedFields(n);}setParsedMeta({count:nf.length});};
+  const addWhere=()=>setWhereClauses(p=>[...p,{field:"",op:"=",value:"",logic:p.length?"AND":""}]);
+  const updateWhere=(i,k,v)=>setWhereClauses(p=>p.map((w,j)=>j===i?{...w,[k]:v}:w));
+  const removeWhere=(i)=>setWhereClauses(p=>p.filter((_,j)=>j!==i));
+
+  const buildSOQL=()=>{
+    const fields=[...selectedFields].sort((a,b)=>{if(a==="Id")return -1;if(b==="Id")return 1;return a.localeCompare(b);});
+    if(!fields.length)return "-- Select at least one field";
+    let q=`SELECT ${fields.join(",\n       ")}\nFROM ${obj}`;
+    const vw=whereClauses.filter(w=>w.field&&w.op);
+    if(vw.length){const parts=vw.map((w,i)=>{let c="";if(i>0)c+=` ${w.logic||"AND"} `;c+=w.field+" ";if(w.op==="= null")c+="= null";else if(w.op==="!= null")c+="!= null";else if(w.op==="= TRUE")c+="= TRUE";else if(w.op==="= FALSE")c+="= FALSE";else if(w.op==="IN"||w.op==="NOT IN")c+=`${w.op} (${w.value})`;else if(w.op==="LIKE")c+=`LIKE '${w.value}'`;else if(DATE_LITERALS.some(d=>w.value.toUpperCase().startsWith(d.split(":")[0])))c+=`${w.op} ${w.value}`;else if(/^\d+(\.\d+)?$/.test(w.value)||w.value==="true"||w.value==="false")c+=`${w.op} ${w.value}`;else c+=`${w.op} '${w.value}'`;return c;});q+=`\nWHERE ${parts.join("\n      ")}`;}
+    if(orderBy)q+=`\nORDER BY ${orderBy} ${orderDir}`;
+    if(limit)q+=`\nLIMIT ${limit}`;
+    return q;
+  };
+  const soql=buildSOQL();
+
+  return (
+    <div style={{minHeight:"100vh",background:B.navy,color:B.coolWhite,fontFamily:"'Source Sans 3',sans-serif"}}>
+      <ToolHeader title="SOQL Query Builder" subtitle="Select · Preset · Query" version="v1.0" onBack={onBack}/>
+      <div style={{padding:"12px 24px",borderBottom:`1px solid ${B.border}`,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:4}}>{Object.keys(SOQL_OBJECTS).map(o=><button key={o} onClick={()=>switchObject(o)} style={{padding:"6px 14px",borderRadius:5,fontSize:12,fontWeight:obj===o?700:400,border:obj===o?`1px solid ${B.purple}`:`1px solid ${B.border}`,background:obj===o?"rgba(119,94,211,0.15)":"transparent",color:obj===o?B.lilac:B.textMuted,cursor:"pointer",fontFamily:"'Source Sans 3',sans-serif"}}>{o}</button>)}</div>
+        <div style={{width:1,height:20,background:B.border}}/>
+        <div style={{display:"flex",gap:4}}>{Object.entries(objDef.presets).map(([k,p])=><button key={k} onClick={()=>applyPreset(k)} style={{padding:"5px 12px",borderRadius:4,fontSize:11,fontWeight:600,border:activePreset===k?`1px solid ${p.color}`:`1px solid ${B.border}`,background:activePreset===k?`${p.color}18`:"transparent",color:activePreset===k?p.color:B.textMuted,cursor:"pointer",fontFamily:"'Source Sans 3',sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"}}>{p.label}</button>)}</div>
+        <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+          <Btn small onClick={()=>{setSelectedFields(new Set(allFields));setActivePreset(null);}}>All</Btn>
+          <Btn small onClick={()=>{setSelectedFields(new Set(["Id"]));setActivePreset(null);}}>None</Btn>
+          <Btn small onClick={()=>setShowMeta(!showMeta)} style={{color:showMeta?B.purple:B.textMuted,borderColor:showMeta?B.purple:B.border}}>+ Custom Fields</Btn>
+        </div>
+      </div>
+      {showMeta&&<div style={{padding:"12px 24px",borderBottom:`1px solid ${B.border}`,background:"rgba(119,94,211,0.02)"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          <div><div style={{fontSize:11,fontWeight:600,color:B.coolWhite,marginBottom:6}}>Add Custom Fields</div><div style={{display:"flex",gap:6}}><Inp value={customInput} onChange={setCustomInput} placeholder="Field_API__c (comma-separated)" style={{flex:1}}/><Btn small primary onClick={addCustomField} disabled={!customInput.trim()}>Add</Btn></div></div>
+          <div><div style={{fontSize:11,fontWeight:600,color:B.coolWhite,marginBottom:6}}>Paste SF Inspector Field List</div><div style={{display:"flex",gap:6}}><textarea value={metadataText} onChange={e=>setMetadataText(e.target.value)} placeholder="Paste field export — __c fields auto-detected" rows={2} style={{flex:1,padding:"6px 10px",borderRadius:5,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:11,fontFamily:"'Source Code Pro',monospace",resize:"vertical"}}/><div style={{display:"flex",flexDirection:"column",gap:4}}><Btn small primary onClick={parseMetadata} disabled={!metadataText.trim()}>Parse</Btn><Btn small onClick={()=>{setMetadataText("");setParsedMeta(null);}}>Clear</Btn></div></div>{parsedMeta&&<div style={{marginTop:4,fontSize:11,color:parsedMeta.count?"#22c55e":B.sunflower}}>{parsedMeta.count?`✓ Added ${parsedMeta.count} custom field${parsedMeta.count>1?"s":""}`:"No new __c fields detected."}</div>}</div>
+        </div>
+        {customFields.length>0&&<div style={{marginTop:8,display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:10,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.06em"}}>Custom:</span>{customFields.map(f=><span key={f} style={{fontSize:10,padding:"2px 6px",borderRadius:3,background:"rgba(119,94,211,0.12)",color:B.lilac,display:"flex",alignItems:"center",gap:4}}>{f}<button onClick={()=>{setCustomFields(p=>p.filter(x=>x!==f));const n=new Set(selectedFields);n.delete(f);setSelectedFields(n);}} style={{background:"none",border:"none",color:B.textMuted,cursor:"pointer",fontSize:10,padding:0}}>✕</button></span>)}</div>}
+      </div>}
+      <div style={{display:"flex",minHeight:"calc(100vh - 160px)"}}>
+        <div style={{flex:"1 1 50%",borderRight:`1px solid ${B.border}`,display:"flex",flexDirection:"column"}}>
+          <div style={{padding:"12px 24px",flex:1,overflowY:"auto"}}>
+            <div style={{fontSize:10,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Fields — {selectedFields.size} of {allFields.length}</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2}}>{allFields.map(f=>{const sel=selectedFields.has(f);const isCust=f.endsWith("__c")||f.endsWith("__r");return <label key={f} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 8px",borderRadius:3,cursor:"pointer",fontSize:11,color:sel?B.coolWhite:B.textMuted,background:sel?"rgba(119,94,211,0.08)":"transparent",fontFamily:"'Source Code Pro',monospace"}}><input type="checkbox" checked={sel} onChange={()=>toggleField(f)} style={{accentColor:B.purple}}/><span>{f}</span>{isCust&&<span style={{fontSize:8,color:B.purple,fontWeight:600}}>CUSTOM</span>}</label>;})}</div>
+          </div>
+          <div style={{padding:"12px 24px",borderTop:`1px solid ${B.border}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:10,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.06em"}}>WHERE</span><Btn small onClick={addWhere}>+ Condition</Btn></div>
+            {whereClauses.map((w,i)=><div key={i} style={{display:"flex",gap:4,alignItems:"center",marginBottom:4}}>
+              {i>0?<select value={w.logic} onChange={e=>updateWhere(i,"logic",e.target.value)} style={{width:60,padding:"4px",borderRadius:3,border:`1px solid ${B.border}`,background:B.navyMid,color:B.lilac,fontSize:10,fontFamily:"'Source Code Pro',monospace"}}><option value="AND">AND</option><option value="OR">OR</option></select>:<div style={{width:60}}/>}
+              <select value={w.field} onChange={e=>updateWhere(i,"field",e.target.value)} style={{flex:2,padding:"5px 6px",borderRadius:3,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:11,fontFamily:"'Source Code Pro',monospace"}}><option value="">field...</option>{allFields.map(f=><option key={f} value={f}>{f}</option>)}</select>
+              <select value={w.op} onChange={e=>updateWhere(i,"op",e.target.value)} style={{width:80,padding:"5px 4px",borderRadius:3,border:`1px solid ${B.border}`,background:B.navyMid,color:B.lilac,fontSize:11,fontFamily:"'Source Code Pro',monospace"}}>{WHERE_OPS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>
+              {!["= null","!= null","= TRUE","= FALSE"].includes(w.op)&&<input value={w.value} onChange={e=>updateWhere(i,"value",e.target.value)} placeholder="value" style={{flex:2,padding:"5px 6px",borderRadius:3,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:11,fontFamily:"'Source Code Pro',monospace"}}/>}
+              <button onClick={()=>removeWhere(i)} style={{background:"none",border:"none",color:B.textMuted,cursor:"pointer",fontSize:12,padding:"0 4px"}}>✕</button>
+            </div>)}
+            {whereClauses.length>0&&<div style={{marginTop:4,fontSize:10,color:B.textMuted}}>Date literals: <Tag>LAST_WEEK</Tag> <Tag>THIS_MONTH</Tag> <Tag>LAST_N_DAYS:30</Tag></div>}
+            <div style={{display:"flex",gap:8,marginTop:10}}>
+              <div style={{flex:1}}><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:2,textTransform:"uppercase",letterSpacing:"0.06em"}}>Order By</label><div style={{display:"flex",gap:4}}><select value={orderBy} onChange={e=>setOrderBy(e.target.value)} style={{flex:1,padding:"5px 6px",borderRadius:3,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:11,fontFamily:"'Source Code Pro',monospace"}}><option value="">None</option>{[...selectedFields].sort().map(f=><option key={f} value={f}>{f}</option>)}</select><select value={orderDir} onChange={e=>setOrderDir(e.target.value)} style={{width:60,padding:"5px 4px",borderRadius:3,border:`1px solid ${B.border}`,background:B.navyMid,color:B.lilac,fontSize:11,fontFamily:"'Source Code Pro',monospace"}}><option value="ASC">ASC</option><option value="DESC">DESC</option></select></div></div>
+              <div style={{width:80}}><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:2,textTransform:"uppercase",letterSpacing:"0.06em"}}>Limit</label><input value={limit} onChange={e=>setLimit(e.target.value.replace(/\D/g,""))} placeholder="200" style={{width:"100%",padding:"5px 6px",borderRadius:3,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:11,fontFamily:"'Source Code Pro',monospace"}}/></div>
+            </div>
+            <div style={{marginTop:10,display:"flex",gap:4,flexWrap:"wrap"}}><span style={{fontSize:10,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",lineHeight:"24px"}}>Quick:</span>
+              {obj==="Account"&&<><Btn small onClick={()=>setWhereClauses([{field:"CreatedDate",op:"=",value:"LAST_MONTH",logic:""}])}>Created Last Month</Btn><Btn small onClick={()=>setWhereClauses([{field:"LastActivityDate",op:"= null",value:"",logic:""}])}>No Activity</Btn></>}
+              {obj==="Contact"&&<><Btn small onClick={()=>setWhereClauses([{field:"Email",op:"= null",value:"",logic:""}])}>Missing Email</Btn><Btn small onClick={()=>setWhereClauses([{field:"AccountId",op:"= null",value:"",logic:""}])}>Orphaned</Btn><Btn small onClick={()=>setWhereClauses([{field:"CreatedDate",op:"=",value:"LAST_N_DAYS:30",logic:""}])}>Last 30 Days</Btn></>}
+              {obj==="Opportunity"&&<><Btn small onClick={()=>setWhereClauses([{field:"IsClosed",op:"= FALSE",value:"",logic:""},{field:"CloseDate",op:"<",value:"TODAY",logic:"AND"}])}>Open Past Due</Btn><Btn small onClick={()=>setWhereClauses([{field:"StageName",op:"=",value:"Closed Won",logic:""},{field:"CloseDate",op:">=",value:"THIS_QUARTER",logic:"AND"}])}>Won This Qtr</Btn><Btn small onClick={()=>setWhereClauses([{field:"SBQQ__PrimaryQuote__c",op:"= null",value:"",logic:""},{field:"IsClosed",op:"= FALSE",value:"",logic:"AND"}])}>Open No Quote</Btn></>}
+            </div>
+          </div>
+        </div>
+        <div style={{flex:"1 1 50%",padding:20,display:"flex",flexDirection:"column",background:B.navyLight}}>
+          <div style={{fontSize:10,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Generated SOQL</div>
+          <pre style={{flex:1,padding:16,background:B.navyMid,borderRadius:6,border:`1px solid ${B.border}`,fontSize:12,color:B.coolWhite,lineHeight:1.7,fontFamily:"'Source Code Pro',monospace",whiteSpace:"pre-wrap",wordBreak:"break-all",overflowY:"auto",margin:0}}>{soql}</pre>
+          <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
+            <Btn primary onClick={()=>copyText(soql,"SOQL copied!")}>Copy SOQL</Btn>
+            <Btn onClick={()=>copyText(`Object: ${obj}\nPreset: ${activePreset||"Custom"}\nFields: ${selectedFields.size}\n\n${soql}`,"Copied with context!")}>Copy with Context</Btn>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ CHANGE DOC GENERATOR ═══════════ */
+const AREAS=["Accounts","Contacts","Opportunities","Cases","Contracts","CPQ / Quotes","Products & Price Books","Campaigns","Reports & Dashboards","Users & Permissions","Custom Objects","Flows & Automation","Other"];
+const CHANGE_TYPES=["New Field","Field Update","New Flow / Automation","Flow / Automation Update","Validation Rule","Permission Change","Page Layout Change","Record Type Change","Data Fix / Cleanup","Integration Change","Process Retirement","Other"];
+const IMPACT_LEVELS=["Informational — no user action needed","Low — minor workflow change","Medium — users should be aware","High — training or process change required"];
+
+function ChangeDocGenerator({onBack}){
+  const[mode,setMode]=useState("single");const[form,setForm]=useState({area:"",type:"",summary:"",details:"",impact:"",requestId:"",admin:""});const[entries,setEntries]=useState([]);const[batchText,setBatchText]=useState("");const[parseResult,setParseResult]=useState(null);const[generated,setGenerated]=useState(null);const[newsletterDate,setNewsletterDate]=useState(()=>new Date().toISOString().slice(0,10));
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));const canSubmit=form.area&&form.type&&form.summary;
+  const makeBlurb=(title,res,desc)=>{const d=res||desc||"";if(!d)return title?truncate(title,BLURB_CAP):"";return truncate(`${title}: ${d}`,BLURB_CAP);};
+  const expandSingle=(e)=>{let d=`## ${e.type||e.feature||"Update"}: ${e.area}\n`;if(e.requestId)d+=`**Admin Request:** ${e.requestId}\n`;if(e.admin)d+=`**Completed by:** ${e.admin}\n`;d+=`**Date:** ${e.completedDate||new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}\n\n`;d+=`### Summary\n${e.summary||e.title||""}\n\n`;const det=e.details||e.resolution||e.description||"";if(det)d+=`### Details\n${det}\n\n`;if(e.impact)d+=`### Impact Level\n${e.impact}\n`;return d;};
+  const addEntry=()=>{setEntries(p=>[...p,{...form,id:Date.now(),title:form.summary,blurb:makeBlurb(form.summary,"",form.details)}]);setGenerated(null);setForm({area:"",type:"",summary:"",details:"",impact:"",requestId:"",admin:""});};
+  const handleParseCsv=()=>{if(!batchText.trim())return;const r=parseAdminRequestCSV(batchText);setParseResult(r);if(r.entries.length){setEntries(p=>[...p,...r.entries]);setGenerated(null);}};
+  const generateDocs=()=>setGenerated(entries.map(expandSingle).join("\n---\n\n"));
+  const generateNewsletter=()=>{if(!entries.length){setGenerated("⚠️ Add at least one entry.");return;}const grouped={};entries.forEach(e=>{const a=e.area||"General";if(!grouped[a])grouped[a]=[];grouped[a].push(e);});const we=new Date(newsletterDate+"T12:00:00");const ws=new Date(we);ws.setDate(ws.getDate()-6);const fmt=d=>d.toLocaleDateString("en-US",{month:"short",day:"numeric"});let nl=`# Salesforce Updates\n### Week of ${fmt(ws)} – ${fmt(we)}\n\nHey team — here's a quick look at what changed in Salesforce this week. As always, reach out to the Admin team if you have questions about how any of these affect your workflow.\n\n`;Object.keys(grouped).sort().forEach(area=>{nl+=`## ${area}\n\n`;grouped[area].forEach(e=>{const title=e.title||e.summary||"Update";const detail=e.resolution||e.details||e.description||"";const blurb=detail?truncate(detail,BLURB_CAP):"";nl+=`**${title}**`;if(e.requestId)nl+=`  ·  _${e.requestId}_`;nl+=`\n`;if(blurb)nl+=`${blurb}\n`;if(e.scope&&e.scope!=="Global")nl+=`_Scope: ${e.scope}_  `;if(e.severity)nl+=`_Severity: ${e.severity}_  `;nl+=`\n\n`;});});nl+=`---\n\nThat's the rundown. If something here changes how you work, we'll make sure you have what you need — just flag it for us.\n\n_— The Salesforce Admin Team_\n`;setGenerated(nl);};
+  const renderMd=(text)=>text.split("\n").map((line,i)=>{if(line.startsWith("# "))return <div key={i} style={{fontSize:20,fontWeight:700,color:B.coolWhite,marginBottom:4,marginTop:i?16:0}}>{line.slice(2)}</div>;if(line.startsWith("### "))return <div key={i} style={{fontSize:12,fontWeight:600,color:B.lilac,marginBottom:2,marginTop:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>{line.slice(4)}</div>;if(line.startsWith("## "))return <div key={i} style={{fontSize:15,fontWeight:700,color:B.purple,marginBottom:4,marginTop:14}}>{line.slice(3)}</div>;if(line.startsWith("---"))return <hr key={i} style={{border:"none",borderTop:`1px solid ${B.border}`,margin:"16px 0"}}/>;if(line.startsWith("- "))return <div key={i} style={{paddingLeft:14,position:"relative",marginBottom:2}}><span style={{position:"absolute",left:0,color:B.purple}}>•</span>{renderInline(line.slice(2))}</div>;return <div key={i} style={{minHeight:line.trim()?undefined:8}}>{renderInline(line)}</div>;});
+  const renderInline=(text)=>{if(!text)return text;const parts=text.split(/(\*\*[^*]+\*\*|_[^_]+_)/);return parts.map((p,i)=>{if(p.startsWith("**")&&p.endsWith("**"))return <strong key={i} style={{color:B.coolWhite}}>{p.slice(2,-2)}</strong>;if(p.startsWith("_")&&p.endsWith("_"))return <em key={i} style={{color:B.textMuted,fontSize:11}}>{p.slice(1,-1)}</em>;return <span key={i}>{p}</span>;});};
+  const entryCard=(e,i)=><div key={e.id||i} style={{padding:"10px 12px",background:B.navyMid,borderRadius:5,border:`1px solid ${B.border}`,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:6}}><div style={{flex:1,minWidth:0}}><div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:3}}>{e.requestId&&<Tag>{e.requestId}</Tag>}<Tag color={B.textMuted}>{e.area||"General"}</Tag>{e.feature&&<Tag color={B.textMuted}>{e.feature}</Tag>}{e.severity&&<Pill color={e.severity==="High"?B.sunflower:B.textMuted}>{e.severity}</Pill>}</div><div style={{fontSize:12,fontWeight:600,color:B.coolWhite}}>{e.title||e.summary||"Untitled"}</div>{(e.blurb||e.resolution||e.details)&&<div style={{fontSize:11,color:B.textMuted,marginTop:2,lineHeight:1.4}}>{truncate(e.resolution||e.details||e.blurb||"",BLURB_CAP)}</div>}</div><button onClick={()=>setEntries(entries.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:B.textMuted,cursor:"pointer",fontSize:14,padding:0,flexShrink:0}}>✕</button></div>;
+
+  return (
+    <div style={{minHeight:"100vh",background:B.navy,color:B.coolWhite,fontFamily:"'Source Sans 3',sans-serif"}}>
+      <ToolHeader title="Change Documentation Generator" subtitle="Capture · Document · Communicate" version="v1.1" onBack={onBack}/>
+      <div style={{display:"flex",borderBottom:`1px solid ${B.border}`}}>{[{k:"single",label:"Single Change"},{k:"batch",label:"Batch Builder"},{k:"newsletter",label:"Newsletter"}].map(m=><button key={m.k} onClick={()=>{setMode(m.k);setGenerated(null);}} style={{flex:1,padding:"10px 16px",fontSize:12,fontWeight:mode===m.k?700:400,color:mode===m.k?B.purple:B.textMuted,background:"transparent",border:"none",borderBottom:mode===m.k?`2px solid ${B.purple}`:"2px solid transparent",cursor:"pointer",fontFamily:"'Source Sans 3',sans-serif"}}>{m.label}{m.k==="batch"&&entries.length>0?` (${entries.length})`:""}</button>)}</div>
+      <div style={{display:"flex",gap:0,minHeight:"calc(100vh - 110px)"}}>
+        <div style={{flex:"1 1 50%",padding:20,overflowY:"auto",borderRight:`1px solid ${B.border}`}}>
+          {mode==="single"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{fontSize:11,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600}}>Change Details</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Area *</label><Sel value={form.area} onChange={v=>set("area",v)} placeholder="Select area..." options={AREAS}/></div><div><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Change Type *</label><Sel value={form.type} onChange={v=>set("type",v)} placeholder="Select type..." options={CHANGE_TYPES}/></div></div>
+            <div><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Summary *</label><Inp value={form.summary} onChange={v=>set("summary",v)} placeholder="What changed?"/></div>
+            <div><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Details / Resolution</label><Inp multi value={form.details} onChange={v=>set("details",v)} placeholder="How was it implemented?"/></div>
+            <div><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Impact Level</label><Sel value={form.impact} onChange={v=>set("impact",v)} placeholder="Select impact..." options={IMPACT_LEVELS}/></div>
+            <div style={{fontSize:11,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginTop:4}}>Optional</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Admin Request #</label><Inp value={form.requestId} onChange={v=>set("requestId",v)} placeholder="AR-000123"/></div><div><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Completed By</label><Inp value={form.admin} onChange={v=>set("admin",v)} placeholder="Name"/></div></div>
+            {form.summary&&<div style={{padding:"8px 12px",background:B.navyMid,borderRadius:5,borderLeft:`3px solid ${B.purple}`}}><div style={{fontSize:10,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>Blurb Preview ({truncate(makeBlurb(form.summary,"",form.details),BLURB_CAP).length}/{BLURB_CAP})</div><div style={{fontSize:12,color:B.coolWhite,lineHeight:1.5}}><strong>{form.summary}</strong>{form.details&&<><br/><span style={{color:B.textMuted}}>{truncate(form.details,BLURB_CAP-Math.min(form.summary.length,60))}</span></>}</div></div>}
+            <div style={{display:"flex",gap:8,marginTop:4}}><Btn primary onClick={addEntry} disabled={!canSubmit}>+ Add to Batch</Btn><Btn onClick={()=>{if(canSubmit)setGenerated(expandSingle({...form,title:form.summary}));}} disabled={!canSubmit}>Preview Doc</Btn></div>
+          </div>}
+          {mode==="batch"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{fontSize:11,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600}}>Queued ({entries.length})</div>
+            {entries.length===0&&<div style={{padding:24,textAlign:"center",color:B.textMuted,fontSize:12,background:B.navyMid,borderRadius:6,lineHeight:1.6}}>No entries. Use <strong style={{color:B.lilac}}>Single Change</strong> or paste CSV below.</div>}
+            <div style={{maxHeight:280,overflowY:"auto"}}>{entries.map((e,i)=>entryCard(e,i))}</div>
+            <div style={{borderTop:`1px solid ${B.border}`,paddingTop:12}}><div style={{fontSize:11,color:B.coolWhite,fontWeight:600,marginBottom:6}}>Import from Admin Request Export</div><div style={{fontSize:11,color:B.textMuted,marginBottom:6,lineHeight:1.5}}>Paste CSV from Salesforce Inspector. Auto-filters to Closed requests.</div><textarea value={batchText} onChange={e=>setBatchText(e.target.value)} placeholder="Paste Admin Request CSV..." rows={4} style={{width:"100%",padding:"8px 10px",borderRadius:5,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:11,fontFamily:"'Source Code Pro',monospace",resize:"vertical"}}/>{parseResult&&<div style={{marginTop:6,fontSize:11,color:parseResult.entries.length?"#22c55e":B.sunflower,padding:"6px 10px",background:B.navyMid,borderRadius:4}}>{parseResult.entries.length>0?`✓ Parsed ${parseResult.entries.length} closed request${parseResult.entries.length>1?"s":""}`:"⚠ No closed requests found."}</div>}<div style={{display:"flex",gap:8,marginTop:8}}><Btn primary onClick={handleParseCsv} disabled={!batchText.trim()}>Parse CSV</Btn><Btn onClick={()=>{setBatchText("");setParseResult(null);}}>Clear</Btn></div></div>
+            <div style={{display:"flex",gap:8,marginTop:8,borderTop:`1px solid ${B.border}`,paddingTop:12}}><Btn primary onClick={generateDocs} disabled={!entries.length}>Generate Docs</Btn><Btn onClick={()=>{setMode("newsletter");generateNewsletter();}} disabled={!entries.length}>→ Newsletter</Btn><Btn onClick={()=>{setEntries([]);setGenerated(null);setParseResult(null);}} disabled={!entries.length} style={{marginLeft:"auto"}}>Clear All</Btn></div>
+          </div>}
+          {mode==="newsletter"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{fontSize:11,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600}}>Newsletter Settings</div>
+            <div><label style={{fontSize:10,color:B.textMuted,display:"block",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Week Ending</label><input type="date" value={newsletterDate} onChange={e=>setNewsletterDate(e.target.value)} style={{padding:"8px 10px",borderRadius:5,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:12,fontFamily:"'Source Sans 3',sans-serif"}}/></div>
+            <div style={{padding:12,background:B.navyMid,borderRadius:6,fontSize:12,color:B.textMuted,lineHeight:1.6}}><strong style={{color:B.coolWhite}}>Workflow:</strong> Add changes → set date → generate → copy output for email or Word doc.</div>
+            <div style={{fontSize:12,color:B.textMuted}}><strong style={{color:B.coolWhite}}>{entries.length}</strong> entries · <strong style={{color:B.lilac}}>{[...new Set(entries.map(e=>e.area||"General"))].length}</strong> areas</div>
+            <Btn primary onClick={generateNewsletter} disabled={!entries.length}>Generate Newsletter</Btn>
+          </div>}
+        </div>
+        <div style={{flex:"1 1 50%",padding:20,overflowY:"auto",background:B.navyLight}}>
+          <div style={{fontSize:11,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12}}>Output Preview</div>
+          {!generated&&<div style={{padding:32,textAlign:"center",color:B.textMuted,fontSize:12,lineHeight:1.6}}><div style={{fontSize:28,marginBottom:8,opacity:0.3}}>📝</div>Fill out a change and preview,<br/>or build a batch and generate.</div>}
+          {generated&&<div><div style={{padding:16,background:B.navyMid,borderRadius:6,border:`1px solid ${B.border}`,fontSize:12,color:B.coolWhite,lineHeight:1.7,maxHeight:"60vh",overflowY:"auto"}}>{renderMd(generated)}</div><div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><Btn primary onClick={()=>copyText(generated,"Copied!")}>Copy Output</Btn></div></div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ HUB COMPONENTS ═══════════ */
+function ToolCard({tool,expanded,onToggle,onLaunch}){
+  const st=STATUS_CFG[tool.status];const pc=PRI_CLR[tool.priority];
+  return <div onClick={onToggle} style={{background:B.navyLight,border:`1px solid ${B.border}`,borderLeft:`3px solid ${pc}`,borderRadius:6,padding:"14px 16px",cursor:"pointer",transition:"all 0.2s",marginBottom:8}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:5}}>
+          <span style={{fontWeight:700,fontSize:14,color:B.coolWhite}}>{tool.name}</span>
+          <Pill color={st.color} bg={st.bg}>{st.label}</Pill>
+          {tool.status==="built"&&<Pill color={B.navy} bg={B.sunflower}>{tool.externalUrl?"Open →":"Launch →"}</Pill>}
+        </div>
+        <div style={{fontSize:12,color:B.textMuted,marginBottom:6,lineHeight:1.5}}>{tool.description}</div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Tag>{tool.platform}</Tag><Tag color={B.textMuted}>Effort: {tool.effort}</Tag><Tag color={pc}>Priority: {tool.priority}</Tag></div>
+      </div>
+      <span style={{fontSize:16,color:B.textMuted,transform:expanded?"rotate(180deg)":"rotate(0)",transition:"transform 0.2s"}}>▾</span>
+    </div>
+    {expanded&&<div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${B.border}`,fontSize:12,color:B.textMuted,lineHeight:1.6}}>
+      <div style={{fontWeight:600,color:B.coolWhite,marginBottom:4}}>Implementation Details</div>
+      {tool.details}
+      <div style={{marginTop:8,display:"flex",gap:4,flexWrap:"wrap"}}>{tool.tags.map(t=><Tag key={t}>#{t}</Tag>)}</div>
+      {tool.status==="built"&&<div style={{marginTop:12}}>
+        {tool.externalUrl
+          ? <Btn primary onClick={e=>{e.stopPropagation();window.open(tool.externalUrl,"_blank");}}>Open in Power Automate ↗</Btn>
+          : <Btn primary onClick={e=>{e.stopPropagation();onLaunch(tool.id);}}>Open Tool</Btn>}
+      </div>}
+    </div>}
+  </div>;
+}
+
+function ToolFinder({onClose,onLaunch}){
+  const[step,setStep]=useState(0);const[ans,setAns]=useState({});const[results,setResults]=useState(null);
+  const pick=(qid,val)=>{const a={...ans,[qid]:val};setAns(a);if(step<FINDER_Q.length-1)setStep(step+1);else{const ids=RECS[a.goal]?.[a.input]||[];setResults(ids.map(id=>TOOLS.find(t=>t.id===id)).filter(Boolean));}};
+  const reset=()=>{setStep(0);setAns({});setResults(null);};
+  if(results)return <div style={{padding:20}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontWeight:700,fontSize:16,color:B.coolWhite}}>Recommended Tools</span><div style={{display:"flex",gap:8}}><Btn small onClick={reset}>Start Over</Btn><Btn small onClick={onClose}>✕</Btn></div></div>
+    <div style={{fontSize:12,color:B.textMuted,marginBottom:14,padding:"8px 12px",background:B.navyMid,borderRadius:4,lineHeight:1.5}}>Goal: <strong style={{color:B.lilac}}>{FINDER_Q[0].options.find(o=>o.value===ans.goal)?.label}</strong> · Input: <strong style={{color:B.lilac}}>{FINDER_Q[1].options.find(o=>o.value===ans.input)?.label}</strong></div>
+    {results.map((tool,i)=>{const st=STATUS_CFG[tool.status];return <div key={tool.id} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",background:i===0?"rgba(119,94,211,0.06)":B.navyLight,border:`1px solid ${i===0?B.purple:B.border}`,borderRadius:6,marginBottom:8}}><span style={{fontWeight:800,fontSize:18,color:i===0?B.purple:B.textMuted,minWidth:24}}>{i+1}</span><div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:B.coolWhite}}>{tool.name}</div><div style={{fontSize:11,color:B.textMuted,marginTop:2,lineHeight:1.5}}>{tool.description}</div><div style={{display:"flex",gap:6,marginTop:6,alignItems:"center"}}><Pill color={st.color} bg={st.bg}>{st.label}</Pill><Tag>{tool.platform}</Tag>{tool.status==="built"&&!tool.externalUrl&&<Btn small primary onClick={()=>onLaunch(tool.id)} style={{marginLeft:4}}>Launch →</Btn>}{tool.status==="built"&&tool.externalUrl&&<Btn small primary onClick={()=>window.open(tool.externalUrl,"_blank")} style={{marginLeft:4}}>Open ↗</Btn>}</div></div></div>;})}
+  </div>;
+  const q=FINDER_Q[step];
+  return <div style={{padding:20}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontWeight:700,fontSize:16,color:B.coolWhite}}>Tool Finder</span><Btn small onClick={onClose}>✕</Btn></div>
+    <div style={{display:"flex",gap:4,marginBottom:16}}>{FINDER_Q.map((_,i)=><div key={i} style={{flex:1,height:3,borderRadius:2,background:i<=step?B.purple:B.border,transition:"background 0.3s"}}/>)}</div>
+    <div style={{fontSize:14,fontWeight:600,color:B.coolWhite,marginBottom:14}}>{q.question}</div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{q.options.map(o=><button key={o.value} onClick={()=>pick(q.id,o.value)} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:6,border:`1px solid ${B.border}`,background:B.navyLight,cursor:"pointer",textAlign:"left",fontSize:12,color:B.coolWhite,fontFamily:"'Source Sans 3',sans-serif",transition:"all 0.15s"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=B.purple;e.currentTarget.style.background=B.navyMid;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=B.border;e.currentTarget.style.background=B.navyLight;}}><span style={{fontSize:18}}>{o.icon}</span><span style={{fontWeight:500}}>{o.label}</span></button>)}</div>
+  </div>;
+}
+
+/* ═══════════ MAIN APP ═══════════ */
+function App(){
+  const[view,setView]=useState("hub");const[expandedTool,setExpandedTool]=useState(null);const[filterCat,setFilterCat]=useState("All");const[search,setSearch]=useState("");const[showFinder,setShowFinder]=useState(false);
+  const launch=useCallback((id)=>{if(id==="change-doc")setView("tool:change-doc");if(id==="soql-builder")setView("tool:soql-builder");},[]);
+  if(view==="tool:change-doc")return <ChangeDocGenerator onBack={()=>setView("hub")}/>;
+  if(view==="tool:soql-builder")return <SOQLBuilder onBack={()=>setView("hub")}/>;
+  const filtered=TOOLS.filter(t=>{if(filterCat!=="All"&&t.category!==filterCat)return false;if(search&&!`${t.name} ${t.description} ${t.tags.join(" ")}`.toLowerCase().includes(search.toLowerCase()))return false;return true;});
+  const stats={total:TOOLS.length,built:TOOLS.filter(t=>t.status==="built").length,progress:TOOLS.filter(t=>t.status==="in-progress").length,planned:TOOLS.filter(t=>t.status==="planned").length};
+  return (
+    <div style={{minHeight:"100vh",background:B.navy,color:B.coolWhite,fontFamily:"'Source Sans 3',sans-serif"}}>
+      <div style={{padding:"18px 24px",borderBottom:`1px solid ${B.border}`,background:`linear-gradient(135deg, ${B.navy} 0%, ${B.navyLight} 100%)`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+          <div><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:3}}><div style={{width:10,height:10,borderRadius:"50%",background:`linear-gradient(135deg, ${B.gradA}, ${B.gradB})`,boxShadow:"0 0 10px rgba(119,94,211,0.4)"}}/><span style={{fontWeight:700,fontSize:19,letterSpacing:"-0.01em",color:B.coolWhite}}>NEUMO</span><span style={{fontWeight:300,fontSize:19,color:B.lilac}}>Admin Toolkit</span></div><div style={{fontSize:11,color:B.textMuted,paddingLeft:20,fontFamily:"'Source Code Pro',monospace"}}>Salesforce Administration Hub · v0.5</div></div>
+          <Btn primary onClick={()=>setShowFinder(!showFinder)} style={{background:showFinder?"rgba(119,94,211,0.15)":"transparent",borderColor:showFinder?B.purple:B.border,color:showFinder?B.lilac:B.coolWhite}}>🎯 Tool Finder</Btn>
+        </div>
+        <div style={{display:"flex",gap:20}}>{[{l:"Total",v:stats.total,c:B.coolWhite},{l:"Built",v:stats.built,c:"#22c55e"},{l:"In Progress",v:stats.progress,c:B.sunflower},{l:"Planned",v:stats.planned,c:B.textMuted}].map(s=><div key={s.l} style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontWeight:700,fontSize:20,color:s.c}}>{s.v}</span><span style={{fontSize:10,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.06em"}}>{s.l}</span></div>)}</div>
+      </div>
+      {showFinder&&<div style={{borderBottom:`1px solid ${B.border}`,background:"rgba(119,94,211,0.02)"}}><ToolFinder onClose={()=>setShowFinder(false)} onLaunch={launch}/></div>}
+      <div style={{padding:"12px 24px",display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",borderBottom:`1px solid ${B.border}`}}>
+        <input type="text" placeholder="Search tools..." value={search} onChange={e=>setSearch(e.target.value)} style={{flex:"1 1 160px",padding:"6px 12px",borderRadius:4,border:`1px solid ${B.border}`,background:B.navyMid,color:B.coolWhite,fontSize:12,fontFamily:"'Source Sans 3',sans-serif",minWidth:100}}/>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{["All",...CATEGORIES].map(c=><button key={c} onClick={()=>setFilterCat(c)} style={{padding:"4px 10px",borderRadius:4,fontSize:11,whiteSpace:"nowrap",border:filterCat===c?`1px solid ${B.purple}`:`1px solid ${B.border}`,background:filterCat===c?"rgba(119,94,211,0.1)":"transparent",color:filterCat===c?B.lilac:B.textMuted,cursor:"pointer",fontFamily:"'Source Sans 3',sans-serif"}}>{c}</button>)}</div>
+      </div>
+      <div style={{padding:"16px 24px",overflowY:"auto"}}>{CATEGORIES.filter(c=>filterCat==="All"||filterCat===c).map(cat=>{const ct=filtered.filter(t=>t.category===cat);if(!ct.length)return null;return <div key={cat} style={{marginBottom:20}}><div style={{fontWeight:700,fontSize:11,color:B.textMuted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,display:"flex",alignItems:"center",gap:8}}><span>{cat}</span><div style={{flex:1,height:1,background:B.border}}/><span style={{fontFamily:"'Source Code Pro',monospace",fontSize:10,fontWeight:400}}>{ct.length}</span></div>{ct.map(tool=><ToolCard key={tool.id} tool={tool} expanded={expandedTool===tool.id} onToggle={()=>setExpandedTool(expandedTool===tool.id?null:tool.id)} onLaunch={launch}/>)}</div>;})}</div>
+      <div style={{padding:"10px 24px",borderTop:`1px solid ${B.border}`,display:"flex",justifyContent:"space-between",fontSize:10,color:B.textMuted,fontFamily:"'Source Code Pro',monospace"}}><span>Neumo Salesforce Admin Team</span><span>v0.5 · April 2026</span></div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
