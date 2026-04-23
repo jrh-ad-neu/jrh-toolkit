@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neumo SOQL Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #0A1128; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const B = {
+  navy:"#0A1128", purple:"#775ED3", lilac:"#DACDF2", coolWhite:"#F7F2F9",
+  sunflower:"#EFE745", gradA:"#AEA7F4", gradB:"#7349F3",
+  navyLight:"#131B38", navyMid:"#1A2444", border:"#252E4A", textMuted:"#9BA3BF",
+};
+
+const FIELD_DATA = {"Account":{"s":["AccountNumber","AccountSource","AnnualRevenue","BillingAddress","BillingCity","BillingCountry","BillingCountryCode","BillingGeocodeAccuracy","BillingLatitude","BillingLongitude","BillingPostalCode","BillingState","BillingStateCode","BillingStreet","ChannelProgramLevelName","ChannelProgramName","CreatedById","CreatedDate","CurrencyIsoCode","Description","Fax","Id","Industry","IsCustomerPortal","IsDeleted","IsPartner","IsPriorityRecord","Jigsaw","JigsawCompanyId","LastActivityDate","LastModifiedById","LastModifiedDate","LastReferencedDate","LastViewedDate","MasterRecordId","Name","NumberOfEmployees","OperatingHoursId","OwnerId","Ownership","ParentId","Phone","PhotoUrl","Rating","RecordTypeId","ShippingAddress","ShippingCity","ShippingCountry","ShippingCountryCode","ShippingGeocodeAccuracy","ShippingLatitude","ShippingLongitude","ShippingPostalCode","ShippingState","ShippingStateCode","ShippingStreet","Sic","SicDesc","Site","SourceSystemIdentifier","SystemModstamp","TickerSymbol","Type","Website"],"c":["SBQQ__AssetQuantitiesCombined__c","SBQQ__CoTermedContractsCombined__c","SBQQ__CoTerminationEvent__c","SBQQ__ContractCoTermination__c","SBQQ__DefaultOpportunity__c","SBQQ__IgnoreParentContractedPrices__c","SBQQ__PreserveBundle__c","SBQQ__PriceHoldEnd__c","SBQQ__RenewalModel__c","SBQQ__RenewalPricingMethod__c","SBQQ__TaxExempt__c"],"e":["ExternalAvenuServiceNowID__c","ExternalId__c","External_Avenu_ID__c","Full_ID__c","GovOS_External_ID__c","IMS_ID__c","Migration_ID__c","NS_ID__c"],"x":["AAMVA_Region__c","Account7Days__c","AccountAge__c","AccountApprovalRequestorEmailAddress__c","AccountRecordTypeName__c","Account_Approval__c","Account_Deactivation_Date_Time__c","Account_Domain__c","Account_Farmer__c","Account_Legal_Name__c","Account_Name_with_State__c","Account_Profile__c","Account_Status__c","Account_Type__c","Active_DMV_Contract__c","Active_E__c","Affiliate__c","AgeforLicense__c","Agency_Number__c","AgiloftCompanyID__c","Alias__c","AnnualSKExams__c","Annual_KT_Exams__c","Approval_Comments__c","Armored_Truck_Dispatch_Email__c","AsianPopulation__c","Associated_Tech_Warehouse__c","Ave_200__c","Backup_Account_Owner__c","Backup_Phone_Number__c","BalckPopulation__c","Billing_Entity_ID__c","Billing_Frequency__c","BranchEmail__c","Business_Hours__c","CSM_Manual_Assignment__c","Capital__c","CasesCreatedToday__c","Class_E_Knowledge_Contract__c","Class_E_Skills_Contract__c","CommunitySiteActive__c","Company_Description__c","Company_Type__c","Competitor_1_Additional_Info__c","Competitor_1_Contract_End_Date__c","Competitor_1_Contract_Start_Date__c","Competitor_1_Product_Category__c","Competitor_1_Product_Name__c","Competitor_1__c","Competitor_2_Additional_Info__c","Competitor_2_Contract_End_Date__c","Competitor_2_Contract_Start_Date__c","Competitor_2_Product_Category__c","Competitor_2_Product_Name__c","Competitor_2__c","Contact_Email_Address__c","Contact_Name__c","Contact_Phone__c","Contact_Title__c","Contract_Number__c","Contract_Vehicles__c","Contracts__c","Control_Stations__c","CoreIntegration__c","Count_of_Current_Contracts__c","CountyRun__c","County__c","Coverage_Owners__c","CurrentKTVendor__c","CurrentSKVendor__c","Current_Fulfillment__c","CustomerStatus__c","Customer_Tier__c","Customer__c","Data_Quality_Description__c","Data_Quality_Score__c","Dataload_Notes__c","Date_of_Most_Recent_Case__c","Delivery_Model__c","Direct_Booking__c","Disability__c","DisabledPopulation__c","Dispatch_Email__c","Display_address__c","District__c","Driver_Testing_Type__c","DriversEdRequired__c","EBITDA__c","Email_Address__c","EscalationDepartment__c","Estimated_Revenue__c","FOIA__c","FTEs__c","FeeCalculation__c","ForeignBornPopulation__c","Fruit__c","Fulfillment_ID__c","FxDriverTestingAccount__c","FxFulfillmentAccount__c","FxJurisdictionName__c","Gift_Options__c","HHwithBroadband__c","HHwithComputer__c","HispanicPopulation__c","Historical_Asset_Count__c","IP_Scheme__c","ITI_Internal_Loc__c","ImmediateLicense__c","Inactive_Account__c","Include_In_Query__c","Ironclad_Account_Name__c","IsValidationBypassed__c","JurisdictionAdminField__c","Jurisdiction_Account__c","Jurisdiction__c","KTCostCap__c","KTExamChannels__c","KTExamCost__c","Knowledge_Tests_Per_Year__c","LanguageOtherThanEnglish__c","Languages__c","Latest_Contract_Expiration_Date__c","Latest_Touchpoint_Date__c","LicenseTypesAvailable__c","License_Plate_Program__c","Loc_serv_contact__c","Location_Identifier__c","Location_Name__c","Location_Type__c","ManagingAgency__c","MaxNumberofAssets__c","MedianHouseholdIncome__c","MilitaryPopulation__c","Misc_Notes__c","Model_Number__c","Model_Type__c","ModernizationStatus__c","Naming_Street__c","NativeIndigenousPopulation__c","Needs_Admin_Approval__c","NetSuite_Name__c","Next_Step_Date__c","Next_Step__c","Number_Vehicles__c","Number_of_Assets__c","Number_of_Drivers__c","Number_of_Plates__c","Number_of_Recent_Cases__c","NumberofRecreationBoats__c","NumberofRegisteredMotorcycles__c","NumberofRegisteredTrucks__c","NumberofRegisteredVehicles__c","NumberofVehicleRegistrations__c","Office_Code__c","Office_ID__c","Online_Available__c","Operated_By__c","Owner_Details__c","Owner_Type__c","Ownership_Posture__c","PC_Name__c","Partner_Portal_Service_ID__c","Partnership__c","PendingRemoval__c","Percent_at_Counter__c","PermitAge__c","PermitRequired__c","Physical_Address__c","Population__c","Poverty__c","Preventative_Maintenance_Type__c","Price_Per_Test__c","Primary_Office_ID__c","Priority_Account__c","Product_Type__c","ProtectedAccountName__c","Receive_Gifts__c","Record_Type_Converted_Date_Time_Checkbox__c","Record_Type_Converted_Date_Time__c","Record_Update__c","Region__c","RegionalManagerEmail__c","RegistrationFee__c","RegistrationRenewal__c","Rejected_Date__c","RelatedCounty__c","Related_Notes__c","Relationship_Source__c","RenewalChannelOptions__c","RenewalCycle__c","RenewalDetails__c","RenewalNotice__c","RenewalRequirements__c","RenewalTriggerDetailsSchedule__c","RenewalTrigger__c","RepositoryName__c","Revenue_Share_Model__c","Revenue__c","Router_Number__c","SKExamCap__c","SKExamChannels__c","SKExamCost__c","SLA__c","SSTAccount__c","SST_ID__c","SST_Jurisdiction_Code__c","SST_Project_Code__c","SSTs_Installed__c","STR_Count__c","Sales_Manual_Assignment__c","Sales_Specialist__c","School_Name__c","Secondary_Sector__c","Sector__c","Skills_Tablets__c","Skills_Tests_Per_Year__c","SolutionLookup2__c","Solution_Location_Account_Health_Display__c","Solution_Location_Account_Health__c","Solution_Name__c","Solution__c","Source__c","Spare_E__c","Split_State_CSM__c","Split_State_Sales_Specialist__c","State_or_County__c","Store_Number__c","Strategic_Classification__c","Support_Level__c","Supported_By__c","TPAStateMandate__c","Target_Classification__c","TeamViewerID__c","Tech_Support_Company__c","Testing_PCs__c","Time_Zone__c","Top_100_Target_Pre_Sales__c","Top_100_Target__c","Tracking_Email__c","Under18Population__c","ValidationBypassDateTime__c","VeteranPopulation__c","WhitePopulation__c","X2FreeLanguages__c","ofAssociatedSolutions__c","ofTPAs__c"]},"Contact":{"s":["AccountId","AssistantName","AssistantPhone","Birthdate","BuyerAttributes","ContactSource","CreatedById","CreatedDate","CurrencyIsoCode","Department","DepartmentGroup","Description","DoNotCall","Email","EmailBouncedDate","EmailBouncedReason","Fax","FirstName","HasOptedOutOfEmail","HasOptedOutOfFax","HomePhone","Id","IndividualId","IsDeleted","IsEmailBounced","IsPriorityRecord","Jigsaw","JigsawContactId","LastActivityDate","LastCURequestDate","LastCUUpdateDate","LastModifiedById","LastModifiedDate","LastName","LastReferencedDate","LastViewedDate","LeadSource","MailingAddress","MailingCity","MailingCountry","MailingCountryCode","MailingGeocodeAccuracy","MailingLatitude","MailingLongitude","MailingPostalCode","MailingState","MailingStateCode","MailingStreet","MasterRecordId","MobilePhone","Name","OtherAddress","OtherCity","OtherCountry","OtherCountryCode","OtherGeocodeAccuracy","OtherLatitude","OtherLongitude","OtherPhone","OtherPostalCode","OtherState","OtherStateCode","OtherStreet","OwnerId","Phone","PhotoUrl","ReportsToId","Salutation","SystemModstamp","Title","TitleType"],"c":[],"e":["Avenu_External_Contact_ID__c","ExternalAvenuServiceNowAccountID__c","ExternalAvenuServiceNowContactID__c","ExternalId__c","Full_ID__c","GovOS_External_Contact_ID__c"],"x":["AbbreviatedLastName__c","AbbreviatedName__c","Billing_Contact__c","Campaign__c","Christmas_Gift_Options__c","CustomerPortalUser__c","Data_Quality_Description__c","Data_Quality_Score__c","Email_Hard_Bounce_Reason__c","Email_Undeliverable__c","Engagement_Status__c","FirstLetterofName__c","First_Touch_Campaign__c","First_Touch_Channel__c","First_Touch_Date__c","First_Touch_Source__c","Former__c","General_Notes__c","Hire_Date__c","Hubspot_Notes__c","Include_in_Query_C__c","Influencer__c","Last_Campaign_Date__c","Last_Campaign_Member_Status__c","Last_Marketing_Touch_Date__c","Last_Touch_Campaign__c","Last_Touch_Channel__c","Last_Touch_Date__c","Last_Touch_Source__c","Lead_Source_Channel__c","Lead_Source_Type__c","MC4SF__MC_Subscriber__c","MQL_Checkbox__c","MQL_Date__c","MQL_Source_Channel__c","MQL_Source__c","Main_Contact__c","Marketing_Product_Interest__c","Nickname__c","Primary_Role__c","PriorityContactDisplay__c","PriorityContact__c","Prospect_Notes__c","Related_Affiliate__c","Role__c","Secondary_Email__c","Specialist_ICP__c","Specified_Needs__c","Status__c","Tracking_Dataload__c","Website__c","fxAccountName__c","ofContacts__c"]},"Opportunity":{"s":["AccountId","AgeInDays","Amount","CampaignId","CloseDate","ContactId","ContractId","CreatedById","CreatedDate","CurrencyIsoCode","Description","ExpectedRevenue","Fiscal","FiscalQuarter","FiscalYear","ForecastCategory","ForecastCategoryName","HasOpenActivity","HasOpportunityLineItem","HasOverdueTask","Id","IsClosed","IsDeleted","IsExcludedFromTerritory2Filter","IsPriorityRecord","IsPrivate","IsWon","LastActivityDate","LastActivityInDays","LastAmountChangedHistoryId","LastCloseDateChangedHistoryId","LastModifiedById","LastModifiedDate","LastReferencedDate","LastStageChangeDate","LastStageChangeInDays","LastViewedDate","LeadSource","Name","NextStep","OwnerId","PartnerAccountId","Pricebook2Id","Probability","PushCount","RecordTypeId","StageName","SyncedQuoteId","SystemModstamp","Territory2Id","TotalOpportunityQuantity","Type"],"c":["SBQQ__AmendedContract__c","SBQQ__Contracted__c","SBQQ__CreateContractedPrices__c","SBQQ__OrderGroupID__c","SBQQ__Ordered__c","SBQQ__PrimaryQuote__c","SBQQ__QuotePricebookId__c","SBQQ__Renewal__c","SBQQ__RenewedContract__c"],"e":["Account_Full_ID__c","Avenu_External_ID__c","External_GovOS_Opportunity_ID__c","External_ID__c","Full_ID__c","ITI_External_Id__c"],"x":["ACV_Estimate__c","ARR_Amount__c","ARR_Estimate__c","AT_Counter__c","AccountCity__c","AccountState__c","AccountStreet__c","AccountZipCode__c","Account_Billing_State__c","Active_Projects__c","Add_On__c","Agency_Department__c","Alert_Owner_Finance_Review_Notes__c","Alert_Owner_Sales_Ops_Review_Notes__c","All_Inactive_Product_Names__c","All_Parsed_Product_Names__c","All_Product_Families__c","All_Product_Names__c","Annual_LP_Volume__c","Annual_Recurring_Revenue_ARR__c","Annual_Registration_Volume__c","Assigned_Approver__c","AverageCostofVehicleRenewal__c","Avg_Annual_Revenue__c","BDR_Notes__c","Bill_To__c","Bill_to_Email__c","Budget__c","Bundled_Contract__c","Business_Unit__c","Bypass_CPQ_Price_Rules__c","Champion__c","Commission_Type_Last_Modified_by_Admin__c","Commission_Type__c","Compelling_Events__c","Competition__c","CompetitorContract__c","Complex_Deal_To_be_reviewed__c","Complexity__c","ContractExtension__c","Contract_Agreement_Status__c","Contract_Approval_Status__c","Contract_End_Date_Manual__c","Contract_End_Date__c","Contract_Expiration__c","Contract_Start_Date__c","Contract_Team_Notes__c","Contract_Term__c","Contract_Type__c","Contract_Vehicle__c","Contract_details__c","Contract_length__c","Count_Inactive_Products__c","County__c","Created_by_Automation__c","CurrentAnnualRevenue__c","CurrentContractor__c","Current_Fulfillment__c","Current_Status__c","Current_Transaction_Processing__c","Customer_Status__c","DMV_Software__c","Data_Load_Lock_Record__c","Data_Quality_Description__c","Data_Quality_Score__c","Date_Set_to_MQL__c","DecisionProcess__c","Decision_Criteria__c","Details_for_Closed_Lost_Reason__c","Doc_assistance__c","Draft_Design_Provided__c","EconomicBuyer__c","Evergreen__c","Expected_First_Year_Revenue__c","Fees_Paid_By__c","Finance_Review_Notes__c","Finvi_Customer_ID__c","First_Year_Revenue__c","Funding_Plan__c","Generate_SO__c","Go_Live_Details__c","HealthDisplay__c","Health__c","ITI_Customer__c","ITI_Strategy__c","IT_Approval__c","IdentifyPain__c","In_Contract_Negotiations__c","Include_In_Query__c","Incremental_Rev_Year__c","Initial_Meeting_Complete__c","Inside_Sales_Rep__c","Install_Date__c","Install_details__c","Intent_to_Award_Received__c","Key_Roles_Identified__c","Knowledge_tests_year__c","Last_Contract__c","Last_Next_Step_Change_Date__c","Legacy_Avenu_Intacct_Contract_Number__c","Legislation__c","License_Plate_Program__c","Line_TCV__c","MQL_Channel__c","MQL_Date__c","MQL_Source__c","Metrics__c","Mid_Contract_Termination_Reason__c","Mutual_Action_Plan__c","NRR_Amount__c","NetChangeinAnnualRevenue__c","Net_ACV__c","Net_ARR__c","Net_NRR__c","Net_TCV__c","Non_Recurring_Revenue_NRR__c","Notes__c","Number_SSTs__c","NumberofAnsweredQuestions__c","OLDRenewal_Opportunity__c","Obstacles__c","Office_Type__c","One_time__c","OppFOIA__c","Opportunity_Contact__c","Opportunity_Group__c","Opportunity_Service__c","Opportunity_Status__c","Oral_Presentation__c","Original_Opportunity__c","PaperProcessContract__c","ParentChild__c","Parsed_Product_Name_Text__c","PaymentsIncluded__c","Pipeline_Description__c","Plates_Issued_Year__c","Previous_Close_Date__c","Previous_Slipped_Deal_Reason__c","Pricing_Calculations__c","Pricing_Model__c","Primary_Business_Unit__c","Primary_Product_Line__c","Primary_Quote_ACV__c","Priority_Contract__c","Priority__c","Product_Category2__c","Product_Category__c","Product_Description__c","Product_Notes__c","Product_Type__c","Proposal_Due_Date__c","Proposal_Submitted__c","Purchase_Process__c","QualificationQuestionCompletion__c","Question_Progress_Bar__c","Quote_Fields_Editable__c","RFP_Number__c","RFP_Released__c","ROI_Required__c","Reason_Closed_Lost__c","RecordTypeName__c","Renewal_Length__c","Requirements__c","Reseller__c","Rev_Closed_Year__c","Rev_Second_Year__c","RevenueShareModel__c","Revenue_Begin_Date__c","SAM__c","SDR__c","SOW_Provided__c","Sales_Amount__c","Sales_Ops_Notes__c","Sales_Order_Number__c","Scope__c","Ship_To__c","Skills_tests_year__c","Slipped_Deal_Note__c","Slipped_Deal_Reason__c","Solution_type__c","Solutions_Consultant_1__c","Solutions_Consultant_2__c","Sub_Type__c","TAM__c","Term__c","Test_Contract__c","Test_Tablets__c","Testing_Details__c","Top_100_Target__c","Top_Challenges__c","Top_Priorities__c","TotalQuestionCount__c","Total_Contract_Value_2__c","Total_Contract_Value__c","Total_Contract__c","Total_SSRS_Software__c","Total_Services__c","Total_Software_Related_Services__c","Total_Value_First_Year__c","Transaction__c","Trigger_Commission_Type_Update__c","UnderContractwithCompetitor__c","Use_Line_TCV_Total__c","Win_Themes__c","X18_digit_Opportunity_ID__c","isAutoCreatedFromContract__c","ofLineItems__c","ofOpportunities__c","ofParentOpportunity__c","of_DL_s_in_State__c","of_Knowledge_Tests__c","of_Skills_Tests__c","of_Vehicles_in_State__c"]},"Contract":{"s":["AccountId","ActivatedById","ActivatedDate","BillingAddress","BillingCity","BillingCountry","BillingCountryCode","BillingGeocodeAccuracy","BillingLatitude","BillingLongitude","BillingPostalCode","BillingState","BillingStateCode","BillingStreet","CompanySignedDate","CompanySignedId","ContractNumber","ContractTerm","CreatedById","CreatedDate","CurrencyIsoCode","CustomerSignedDate","CustomerSignedId","CustomerSignedTitle","Description","EndDate","Id","IsDeleted","LastActivityDate","LastApprovedDate","LastModifiedById","LastModifiedDate","LastReferencedDate","LastViewedDate","Name","OwnerId","Pricebook2Id","RecordTypeId","ShippingAddress","ShippingCity","ShippingCountry","ShippingCountryCode","ShippingGeocodeAccuracy","ShippingLatitude","ShippingLongitude","ShippingPostalCode","ShippingState","ShippingStateCode","ShippingStreet","SpecialTerms","StartDate","Status","StatusCode","SystemModstamp"],"c":["SBQQ__ActiveContract__c","SBQQ__AmendmentOpportunityRecordTypeId__c","SBQQ__AmendmentOpportunityStage__c","SBQQ__AmendmentOwner__c","SBQQ__AmendmentPricebookId__c","SBQQ__AmendmentRenewalBehavior__c","SBQQ__AmendmentStartDate__c","SBQQ__DefaultRenewalContactRoles__c","SBQQ__DefaultRenewalPartners__c","SBQQ__DisableAmendmentCoTerm__c","SBQQ__Evergreen__c","SBQQ__ExpirationDate__c","SBQQ__MDQRenewalBehavior__c","SBQQ__MasterContract__c","SBQQ__OpportunityPricebookId__c","SBQQ__Opportunity__c","SBQQ__Order__c","SBQQ__PreserveBundleStructureUponRenewals__c","SBQQ__Quote__c","SBQQ__RenewalForecast__c","SBQQ__RenewalOpportunityRecordTypeId__c","SBQQ__RenewalOpportunityStage__c","SBQQ__RenewalOpportunity__c","SBQQ__RenewalOwner__c","SBQQ__RenewalPricebookId__c","SBQQ__RenewalQuoted__c","SBQQ__RenewalTerm__c","SBQQ__RenewalUpliftRate__c","SBQQ__SubscriptionQuantitiesCombined__c"],"e":["External_GovOS_Contract_Id__c","External_ID__c","Full_ID__c"],"x":["ARR_Amount_F__c","ARR_Amount__c","AgiloftContractID__c","AgiloftIDLink__c","AgreementType__c","AnnualContractAmount__c","Approval_Status__c","Bill_To__c","BusinessUnit__c","CompanyName__c","CompetitorContractMonitoring__c","ContractAmendmentAddon__c","ContractID__c","ContractStatus__c","ContractType__c","Contract_Amendment__c","Contract_Amount__c","Contract_Expiration__c","Contract_Extension__c","Contract_Opportunity__c","Contract_Renewal_Date__c","Contract_Type__c","CustomerBusinessContact__c","Customer_Name__c","Data_Quality_Description__c","Data_Quality_Score__c","Days_Until_Expiration__c","ExtensionLengthinMonths__c","ExtensionsRemaining__c","Hardware_description__c","Legacy_Avenu_Intacct_Contract_Number__c","NDR_Amount__c","NRR_Amount_F__c","NRR_Amount__c","Notes__c","NumberofExtensionsAllowed__c","Opportunity_Retention_Date__c","ParentContractEndDate__c","ParentContractID__c","ParentContractStartDate__c","ParentContractTitle__c","PricingModel__c","ProductLine__c","Product_Categories__c","Product_Families__c","Product_Names__c","RFP__c","Renew__c","RenewalDate__c","RenewalProvisions__c","RenewalType__c","Renewal_Reminder__c","Renewal_Status__c","Revenue_Start_Date__c","Scope__c","Ship_To__c","Stage_of_Renewal_Opportunity__c","State_Contract__c","Termination_Effective_Date__c","Total_Quantity__c","Unit_Cost__c","X18_digit_Contract_Id__c","X6121824_MonthContractMonitoring__c","X90_DayContractMonitoring__c","renewal_notice__c"]},"SBQQ__Quote__c":{"s":["CreatedById","CreatedDate","CurrencyIsoCode","Id","IsDeleted","LastActivityDate","LastModifiedById","LastModifiedDate","LastReferencedDate","LastViewedDate","Name","OwnerId","SystemModstamp"],"c":["SBQQ__Account__c","SBQQ__AdditionalDiscountAmount__c","SBQQ__AverageCustomerDiscount__c","SBQQ__AveragePartnerDiscount__c","SBQQ__BillingCity__c","SBQQ__BillingCountry__c","SBQQ__BillingFrequency__c","SBQQ__BillingName__c","SBQQ__BillingPostalCode__c","SBQQ__BillingState__c","SBQQ__BillingStreet__c","SBQQ__ConsumptionRateOverride__c","SBQQ__ContractingMethod__c","SBQQ__CustomerAmount__c","SBQQ__CustomerDiscount__c","SBQQ__DaysQuoteOpen__c","SBQQ__DefaultTemplate__c","SBQQ__DeliveryMethod__c","SBQQ__DistributorDiscount__c","SBQQ__Distributor__c","SBQQ__DocumentStatus__c","SBQQ__EmailTemplateId__c","SBQQ__EndDate__c","SBQQ__ExpirationDate__c","SBQQ__FirstSegmentTermEndDate__c","SBQQ__GenerateContractedPrice__c","SBQQ__Introduction__c","SBQQ__Key__c","SBQQ__LastCalculatedOn__c","SBQQ__LastSavedOn__c","SBQQ__LineItemCount__c","SBQQ__LineItemsGrouped__c","SBQQ__LineItemsPrinted__c","SBQQ__ListAmount__c","SBQQ__MarkupRate__c","SBQQ__MasterContract__c","SBQQ__MasterEvergreenContract__c","SBQQ__NetAmount__c","SBQQ__Notes__c","SBQQ__Opportunity2__c","SBQQ__OrderByQuoteLineGroup__c","SBQQ__OrderBy__c","SBQQ__OrderGroupID__c","SBQQ__Ordered__c","SBQQ__OriginalQuote__c","SBQQ__PaperSize__c","SBQQ__PartnerDiscount__c","SBQQ__Partner__c","SBQQ__PaymentTerms__c","SBQQ__PriceBook__c","SBQQ__PricebookId__c","SBQQ__PrimaryContact__c","SBQQ__Primary__c","SBQQ__ProrationDayOfMonth__c","SBQQ__QuoteLanguage__c","SBQQ__QuoteProcessId__c","SBQQ__QuoteTemplateId__c","SBQQ__RegularAmount__c","SBQQ__RenewalTerm__c","SBQQ__RenewalUpliftRate__c","SBQQ__SalesRep__c","SBQQ__ShippingCity__c","SBQQ__ShippingCountry__c","SBQQ__ShippingName__c","SBQQ__ShippingPostalCode__c","SBQQ__ShippingState__c","SBQQ__ShippingStreet__c","SBQQ__Source__c","SBQQ__StartDate__c","SBQQ__Status__c","SBQQ__SubscriptionTerm__c","SBQQ__TargetCustomerAmount__c","SBQQ__TotalCustomerDiscountAmount__c","SBQQ__Type__c","SBQQ__Uncalculated__c","SBQQ__Unopened__c","SBQQ__WatermarkShown__c"],"e":["External_ID__c"],"x":["Bill_to_County__c","Bypass_CPQ_Price_Rules__c","Customer_Email__c","Customer_Name__c","Customer_Number__c","DMV_Product_Rollup__c","End_Date__c","Generate_SO__c","Mid_Contract_Termination_Reason__c","Opportunity_Close_Date__c","Opportunity_Owner_Name__c","Opportunity_Stage__c","Original_Opportunity_ACV__c","Original_Opportunity_ARR__c","Original_Opportunity_NRR__c","Quote_Owner_Name__c","Recalculate__c","Related_Opportunity_ACV__c","Related_Opportunity_ARR__c","Related_Opportunity_NRR__c","Related_Opportunity_Name__c","Related_to_Original_Opp_ARR_Difference__c","SO_Generated__c","Sales_Order_Number__c","Sales_Order_Template__c","Sales_Rep_Name__c","Ship_to_County__c","Special_Instructions__c","State__c","Submission_Comments__c","Submit_for_Approval__c","Todays_Date__c","Total_ACV_Value__c","X18_digit_Quote_ID__c"]},"SBQQ__QuoteLine__c":{"s":["CreatedById","CreatedDate","CurrencyIsoCode","Id","IsDeleted","LastModifiedById","LastModifiedDate","Name","SystemModstamp"],"c":["SBQQ__AdditionalDiscountAmount__c","SBQQ__AdditionalDiscount__c","SBQQ__AdditionalQuantity__c","SBQQ__AllowAssetRefund__c","SBQQ__BatchQuantity__c","SBQQ__BillingFrequency__c","SBQQ__BillingType__c","SBQQ__BlockPrice__c","SBQQ__Bundle__c","SBQQ__BundledQuantity__c","SBQQ__Bundled__c","SBQQ__CarryoverLine__c","SBQQ__ChargeType__c","SBQQ__ComponentCost__c","SBQQ__ComponentDiscountedByPackage__c","SBQQ__ComponentListTotal__c","SBQQ__ComponentSubscriptionScope__c","SBQQ__ComponentTotal__c","SBQQ__ComponentUpliftedByPackage__c","SBQQ__ComponentVisibility__c","SBQQ__CompoundDiscountRate__c","SBQQ__ConfigurationRequired__c","SBQQ__ContractedPrice__c","SBQQ__CostEditable__c","SBQQ__Cost__c","SBQQ__CustomerPrice__c","SBQQ__CustomerTotal__c","SBQQ__DefaultSubscriptionTerm__c","SBQQ__Description__c","SBQQ__Dimension__c","SBQQ__DiscountScheduleType__c","SBQQ__DiscountSchedule__c","SBQQ__DiscountTier__c","SBQQ__Discount__c","SBQQ__DistributorDiscount__c","SBQQ__DynamicOptionId__c","SBQQ__EarliestValidAmendmentStartDate__c","SBQQ__EffectiveEndDate__c","SBQQ__EffectiveQuantity__c","SBQQ__EffectiveStartDate__c","SBQQ__EffectiveSubscriptionTerm__c","SBQQ__EndDate__c","SBQQ__Existing__c","SBQQ__Favorite__c","SBQQ__GenerateContractedPrice__c","SBQQ__GrossProfit__c","SBQQ__Group__c","SBQQ__Guidance__c","SBQQ__HasConsumptionSchedule__c","SBQQ__Hidden__c","SBQQ__Incomplete__c","SBQQ__ListPrice__c","SBQQ__ListTotal__c","SBQQ__MarkupAmount__c","SBQQ__MarkupRate__c","SBQQ__Markup__c","SBQQ__MaximumPrice__c","SBQQ__MinimumPrice__c","SBQQ__NetPrice__c","SBQQ__NetTotal__c","SBQQ__NonDiscountable__c","SBQQ__NonPartnerDiscountable__c","SBQQ__Number__c","SBQQ__OptionDiscountAmount__c","SBQQ__OptionDiscount__c","SBQQ__OptionLevel__c","SBQQ__OptionType__c","SBQQ__Optional__c","SBQQ__OriginalPrice__c","SBQQ__OriginalQuoteLineId__c","SBQQ__OriginalUnitCost__c","SBQQ__PackageCost__c","SBQQ__PackageListTotal__c","SBQQ__PackageProductCode__c","SBQQ__PackageProductDescription__c","SBQQ__PackageTotal__c","SBQQ__PartnerDiscount__c","SBQQ__PartnerPrice__c","SBQQ__PartnerTotal__c","SBQQ__PreviousSegmentPrice__c","SBQQ__PreviousSegmentUplift__c","SBQQ__PriceEditable__c","SBQQ__PricebookEntryId__c","SBQQ__PricingMethodEditable__c","SBQQ__PricingMethod__c","SBQQ__PriorQuantity__c","SBQQ__ProductCode__c","SBQQ__ProductFamily__c","SBQQ__ProductName__c","SBQQ__ProductOption__c","SBQQ__ProductSubscriptionType__c","SBQQ__Product__c","SBQQ__ProrateMultiplier__c","SBQQ__ProratedListPrice__c","SBQQ__ProratedPrice__c","SBQQ__Quantity__c","SBQQ__Quote__c","SBQQ__RegularPrice__c","SBQQ__RegularTotal__c","SBQQ__Renewal__c","SBQQ__RenewedAsset__c","SBQQ__RenewedSubscription__c","SBQQ__RequiredBy__c","SBQQ__SegmentIndex__c","SBQQ__SegmentKey__c","SBQQ__SegmentLabel__c","SBQQ__Source__c","SBQQ__SpecialPriceDescription__c","SBQQ__SpecialPriceType__c","SBQQ__SpecialPrice__c","SBQQ__StartDate__c","SBQQ__SubscribedAssetIds__c","SBQQ__SubscriptionBase__c","SBQQ__SubscriptionCategory__c","SBQQ__SubscriptionPercent__c","SBQQ__SubscriptionPricing__c","SBQQ__SubscriptionScope__c","SBQQ__SubscriptionTargetPrice__c","SBQQ__SubscriptionTerm__c","SBQQ__SubscriptionType__c","SBQQ__TaxCode__c","SBQQ__Taxable__c","SBQQ__TermDiscountSchedule__c","SBQQ__TermDiscountTier__c","SBQQ__TermDiscount__c","SBQQ__TotalDiscountAmount__c","SBQQ__TotalDiscountRate__c","SBQQ__UnitCost__c","SBQQ__UnproratedNetPrice__c","SBQQ__UpgradedAsset__c","SBQQ__UpgradedQuantity__c","SBQQ__UpgradedSubscription__c","SBQQ__UpliftAmount__c","SBQQ__Uplift__c","SBQQ__VolumeDiscount__c"],"e":["External_ID__c"],"x":["ACV_Booking_Value__c","ACV_Override__c","Account_Executive__c","Alternative_List_Price__c","Commission_Type__c","Contract_End_Date_Stamp__c","Contract_Start_Date_Stamp__c","DMV_Product__c","Disable_Proration__c","FINVI_Product__c","Item_ARR__c","Item_NRR__c","Line_Description__c","Pricing_Fee_Type__c","Revenue_Type__c","SO_Product__c","Service_Type__c","True_ACV__c","True_List_Price__c","Unit_Description__c","X18_digit_Quote_Line_ID__c"]},"SBQQ__Subscription__c":{"s":["CreatedById","CreatedDate","CurrencyIsoCode","Id","IsDeleted","LastModifiedById","LastModifiedDate","Name","OwnerId","SystemModstamp"],"c":["SBQQ__Account__c","SBQQ__AdditionalDiscountAmount__c","SBQQ__BillingFrequency__c","SBQQ__BillingType__c","SBQQ__Bundle__c","SBQQ__BundledQuantity__c","SBQQ__Bundled__c","SBQQ__ChargeType__c","SBQQ__ComponentDiscountedByPackage__c","SBQQ__ComponentSubscriptionScope__c","SBQQ__ContractNumber__c","SBQQ__Contract__c","SBQQ__CreditProductId__c","SBQQ__CustomerPrice__c","SBQQ__DimensionType__c","SBQQ__Dimension__c","SBQQ__DiscountScheduleType__c","SBQQ__DiscountSchedule__c","SBQQ__Discount__c","SBQQ__DistributorDiscount__c","SBQQ__DynamicOptionId__c","SBQQ__EndDate__c","SBQQ__HasConsumptionSchedule__c","SBQQ__ListPrice__c","SBQQ__MarkupAmount__c","SBQQ__MarkupRate__c","SBQQ__NetPrice__c","SBQQ__Number__c","SBQQ__OptionDiscountAmount__c","SBQQ__OptionDiscount__c","SBQQ__OptionLevel__c","SBQQ__OptionType__c","SBQQ__OrderProduct__c","SBQQ__OriginalQuoteLine__c","SBQQ__OriginalUnitCost__c","SBQQ__PackageProductCode__c","SBQQ__PackageProductDescription__c","SBQQ__PartnerDiscount__c","SBQQ__PricingMethod__c","SBQQ__ProductId__c","SBQQ__ProductName__c","SBQQ__ProductOption__c","SBQQ__ProductSubscriptionType__c","SBQQ__Product__c","SBQQ__ProrateMultiplier__c","SBQQ__Quantity__c","SBQQ__QuoteLine__c","SBQQ__RegularPrice__c","SBQQ__RenewalPrice__c","SBQQ__RenewalProductId__c","SBQQ__RenewalProductOptionId__c","SBQQ__RenewalProductOptionProductId__c","SBQQ__RenewalProductOptionSubscriptionPricing__c","SBQQ__RenewalQuantity__c","SBQQ__RenewalUpliftRate__c","SBQQ__RenewedDate__c","SBQQ__RequiredById__c","SBQQ__RequiredByProduct__c","SBQQ__RevisedSubscription__c","SBQQ__RootId__c","SBQQ__SegmentEndDate__c","SBQQ__SegmentIndex__c","SBQQ__SegmentKey__c","SBQQ__SegmentLabel__c","SBQQ__SegmentQuantity__c","SBQQ__SegmentStartDate__c","SBQQ__SegmentUpliftAmount__c","SBQQ__SegmentUplift__c","SBQQ__SpecialPrice__c","SBQQ__StartDate__c","SBQQ__SubscriptionEndDate__c","SBQQ__SubscriptionPricing__c","SBQQ__SubscriptionStartDate__c","SBQQ__SubscriptionType__c","SBQQ__TermDiscountSchedule__c","SBQQ__TerminatedDate__c","SBQQ__UnitCost__c"],"e":["External_ID__c"],"x":["ACV_Booking_Value__c","Account_Executive__c","Description__c","Disable_Proration__c","Revenue_Type__c","Service_Type__c"]},"OpportunityLineItem":{"s":["CreatedById","CreatedDate","CurrencyIsoCode","Description","Id","IsDeleted","LastModifiedById","LastModifiedDate","LastReferencedDate","LastViewedDate","ListPrice","Name","OpportunityId","PricebookEntryId","Product2Id","ProductCode","Quantity","ServiceDate","SortOrder","SystemModstamp","TotalPrice","UnitPrice"],"c":["SBQQ__ParentID__c","SBQQ__QuoteLine__c","SBQQ__SubscriptionType__c"],"e":["External_ID__c"],"x":["ACV_Booking_Value__c","Account_Executive__c","Commission_Type__c","Contract_End_Date_Stamp__c","Contract_Start_Date_Stamp__c","Contract__c","Fee_Type__c","Item_ACV__c","Item_ARR__c","Item_NRR__c","Line_Description__c","Line_Item_TCV__c","Line_Owner_Name__c","Line_Term__c","Line_Type__c","NRR_Amount__c","Owner_Name__c","Product_Category__c","Product_Family__c","Product_Is_Active__c","Product_Name_for_Opportunity__c","Product_Sub_Category__c","Revenue_Type__c","Total_New_Services__c","Total_New_Software__c","True_ACV__c","X18_digit_Opportunity_Product_ID__c"]},"AdminRequest__c":{"s":["CreatedById","CreatedDate","CurrencyIsoCode","Id","IsDeleted","LastActivityDate","LastModifiedById","LastModifiedDate","LastReferencedDate","LastViewedDate","Name","OwnerId","RecordTypeId","SystemModstamp"],"c":[],"e":["ExternalId__c","External_Requester_Email__c"],"x":["Account__c","Admin_Notes__c","Age_of_Request__c","Approval_Notes__c","Approver__c","Area__c","Assigned_To__c","Business_Impact__c","Collaborator__c","Completed_Date__c","Contact__c","Days_in_Waiting_on_Others_Status__c","Days_in_Waiting_on_Others__c","Department__c","Description__c","Error_Notes__c","Estimated_End_Date__c","Estimated_Start_Date__c","Feature__c","Internal_Notes__c","Lead__c","Level_of_Effort__c","License_Type__c","Next_Steps__c","Opportunity__c","Pricing_Type__c","Priority__c","Product__c","Request_Status__c","ResolveWithoutEmailNotification__c","Resolution__c","Scope__c","Severity__c","Status_Change_Date__c","Steps_to_Replicate__c","System__c","Title__c","TypeofRequest__c","Why_is_this_needed__c"]}};
+const DEFAULT_PRESETS = {"Account":{"Migration":["BillingCity","BillingCountry","BillingPostalCode","BillingState","BillingStreet","CreatedDate","Description","ExternalAvenuServiceNowID__c","ExternalId__c","External_Avenu_ID__c","Full_ID__c","GovOS_External_ID__c","IMS_ID__c","Id","Industry","LastModifiedDate","Migration_ID__c","NS_ID__c","Name","OwnerId","ParentId","Phone","RecordTypeId","ShippingCity","ShippingCountry","ShippingPostalCode","ShippingState","ShippingStreet","Type","Website"],"Audit":["CreatedById","CreatedDate","Id","IsDeleted","LastActivityDate","LastModifiedById","LastModifiedDate","Name","OwnerId","RecordTypeId","SystemModstamp"],"CPQ":["Id","Name","SBQQ__AssetQuantitiesCombined__c","SBQQ__CoTermedContractsCombined__c","SBQQ__CoTerminationEvent__c","SBQQ__ContractCoTermination__c","SBQQ__DefaultOpportunity__c","SBQQ__IgnoreParentContractedPrices__c","SBQQ__PreserveBundle__c","SBQQ__PriceHoldEnd__c","SBQQ__RenewalModel__c","SBQQ__RenewalPricingMethod__c","SBQQ__TaxExempt__c"],"Cleanup":["BillingCity","BillingState","BillingStreet","Description","Fax","Id","Industry","Name","OwnerId","Phone","Type","Website"]},"Contact":{"Migration":["AccountId","Avenu_External_Contact_ID__c","CreatedDate","Department","Description","Email","ExternalAvenuServiceNowAccountID__c","ExternalAvenuServiceNowContactID__c","ExternalId__c","FirstName","Full_ID__c","GovOS_External_Contact_ID__c","Id","LastModifiedDate","LastName","LeadSource","MailingCity","MailingCountry","MailingPostalCode","MailingState","MailingStreet","Name","OwnerId","Phone","Title"],"Audit":["CreatedById","CreatedDate","Id","IsDeleted","LastActivityDate","LastModifiedById","LastModifiedDate","Name","OwnerId","SystemModstamp"],"CPQ":["AccountId","Id","Name"],"Cleanup":["AccountId","Department","Description","Email","Fax","FirstName","Id","LastName","LeadSource","MailingCity","MailingState","MailingStreet","MobilePhone","Name","OwnerId","Phone","Title"]},"Opportunity":{"Migration":["AccountId","Account_Full_ID__c","Amount","Avenu_External_ID__c","CampaignId","CloseDate","ContactId","ContractId","CreatedDate","Description","External_GovOS_Opportunity_ID__c","External_ID__c","Full_ID__c","ITI_External_Id__c","Id","LastModifiedDate","LeadSource","Name","OwnerId","Pricebook2Id","Probability","RecordTypeId","StageName","Type"],"Audit":["CreatedById","CreatedDate","Id","IsDeleted","LastActivityDate","LastModifiedById","LastModifiedDate","Name","OwnerId","RecordTypeId","StageName","SystemModstamp"],"CPQ":["AccountId","Amount","CloseDate","ContractId","Id","Name","SBQQ__AmendedContract__c","SBQQ__Contracted__c","SBQQ__CreateContractedPrices__c","SBQQ__OrderGroupID__c","SBQQ__Ordered__c","SBQQ__PrimaryQuote__c","SBQQ__QuotePricebookId__c","SBQQ__Renewal__c","SBQQ__RenewedContract__c","StageName"],"Cleanup":["AccountId","Amount","CloseDate","Description","Id","LeadSource","Name","OwnerId","StageName","Type"]},"Contract":{"Migration":["AccountId","BillingCity","BillingCountry","BillingPostalCode","BillingState","BillingStreet","ContractNumber","ContractTerm","CreatedDate","Description","EndDate","External_GovOS_Contract_Id__c","External_ID__c","Full_ID__c","Id","LastModifiedDate","Name","OwnerId","Pricebook2Id","RecordTypeId","ShippingCity","ShippingCountry","ShippingPostalCode","ShippingState","ShippingStreet","StartDate","Status","StatusCode"],"Audit":["CreatedById","CreatedDate","Id","IsDeleted","LastActivityDate","LastModifiedById","LastModifiedDate","Name","OwnerId","RecordTypeId","Status","StatusCode","SystemModstamp"],"CPQ":["AccountId","EndDate","Id","Name","SBQQ__ActiveContract__c","SBQQ__AmendmentOpportunityRecordTypeId__c","SBQQ__AmendmentOpportunityStage__c","SBQQ__AmendmentOwner__c","SBQQ__AmendmentPricebookId__c","SBQQ__AmendmentRenewalBehavior__c","SBQQ__AmendmentStartDate__c","SBQQ__DefaultRenewalContactRoles__c","SBQQ__DefaultRenewalPartners__c","SBQQ__DisableAmendmentCoTerm__c","SBQQ__Evergreen__c","SBQQ__ExpirationDate__c","SBQQ__MDQRenewalBehavior__c","SBQQ__MasterContract__c","SBQQ__OpportunityPricebookId__c","SBQQ__Opportunity__c","SBQQ__Order__c","SBQQ__PreserveBundleStructureUponRenewals__c","SBQQ__Quote__c","SBQQ__RenewalForecast__c","SBQQ__RenewalOpportunityRecordTypeId__c","SBQQ__RenewalOpportunityStage__c","SBQQ__RenewalOpportunity__c","SBQQ__RenewalOwner__c","SBQQ__RenewalPricebookId__c","SBQQ__RenewalQuoted__c","SBQQ__RenewalTerm__c","SBQQ__RenewalUpliftRate__c","SBQQ__SubscriptionQuantitiesCombined__c","StartDate","Status"],"Cleanup":["AccountId","BillingCity","BillingState","BillingStreet","Description","Id","Name","OwnerId","Status"]},"SBQQ__Quote__c":{"Migration":["CreatedDate","External_ID__c","Id","LastModifiedDate","Name","OwnerId"],"Audit":["CreatedById","CreatedDate","Id","IsDeleted","LastActivityDate","LastModifiedById","LastModifiedDate","Name","OwnerId","SystemModstamp"],"CPQ":["Id","Name","SBQQ__Account__c","SBQQ__AdditionalDiscountAmount__c","SBQQ__AverageCustomerDiscount__c","SBQQ__AveragePartnerDiscount__c","SBQQ__BillingCity__c","SBQQ__BillingCountry__c","SBQQ__BillingFrequency__c","SBQQ__BillingName__c","SBQQ__BillingPostalCode__c","SBQQ__BillingState__c","SBQQ__BillingStreet__c","SBQQ__ConsumptionRateOverride__c","SBQQ__ContractingMethod__c","SBQQ__CustomerAmount__c","SBQQ__CustomerDiscount__c","SBQQ__DaysQuoteOpen__c","SBQQ__DefaultTemplate__c","SBQQ__DeliveryMethod__c","SBQQ__DistributorDiscount__c","SBQQ__Distributor__c","SBQQ__DocumentStatus__c","SBQQ__EmailTemplateId__c","SBQQ__EndDate__c","SBQQ__ExpirationDate__c","SBQQ__FirstSegmentTermEndDate__c","SBQQ__GenerateContractedPrice__c","SBQQ__Introduction__c","SBQQ__Key__c","SBQQ__LastCalculatedOn__c","SBQQ__LastSavedOn__c","SBQQ__LineItemCount__c","SBQQ__LineItemsGrouped__c","SBQQ__LineItemsPrinted__c","SBQQ__ListAmount__c","SBQQ__MarkupRate__c","SBQQ__MasterContract__c","SBQQ__MasterEvergreenContract__c","SBQQ__NetAmount__c","SBQQ__Notes__c","SBQQ__Opportunity2__c","SBQQ__OrderByQuoteLineGroup__c","SBQQ__OrderBy__c","SBQQ__OrderGroupID__c","SBQQ__Ordered__c","SBQQ__OriginalQuote__c","SBQQ__PaperSize__c","SBQQ__PartnerDiscount__c","SBQQ__Partner__c","SBQQ__PaymentTerms__c","SBQQ__PriceBook__c","SBQQ__PricebookId__c","SBQQ__PrimaryContact__c","SBQQ__Primary__c","SBQQ__ProrationDayOfMonth__c","SBQQ__QuoteLanguage__c","SBQQ__QuoteProcessId__c","SBQQ__QuoteTemplateId__c","SBQQ__RegularAmount__c","SBQQ__RenewalTerm__c","SBQQ__RenewalUpliftRate__c","SBQQ__SalesRep__c","SBQQ__ShippingCity__c","SBQQ__ShippingCountry__c","SBQQ__ShippingName__c","SBQQ__ShippingPostalCode__c","SBQQ__ShippingState__c","SBQQ__ShippingStreet__c","SBQQ__Source__c","SBQQ__StartDate__c","SBQQ__Status__c","SBQQ__SubscriptionTerm__c","SBQQ__TargetCustomerAmount__c","SBQQ__TotalCustomerDiscountAmount__c","SBQQ__Type__c","SBQQ__Uncalculated__c","SBQQ__Unopened__c","SBQQ__WatermarkShown__c"],"Cleanup":["Id","Name","OwnerId"]},"SBQQ__QuoteLine__c":{"Migration":["CreatedDate","External_ID__c","Id","LastModifiedDate","Name"],"Audit":["CreatedById","CreatedDate","Id","IsDeleted","LastModifiedById","LastModifiedDate","Name","SystemModstamp"],"CPQ":["Id","Name","SBQQ__AdditionalDiscountAmount__c","SBQQ__AdditionalDiscount__c","SBQQ__AdditionalQuantity__c","SBQQ__AllowAssetRefund__c","SBQQ__BatchQuantity__c","SBQQ__BillingFrequency__c","SBQQ__BillingType__c","SBQQ__BlockPrice__c","SBQQ__Bundle__c","SBQQ__BundledQuantity__c","SBQQ__Bundled__c","SBQQ__CarryoverLine__c","SBQQ__ChargeType__c","SBQQ__ComponentCost__c","SBQQ__ComponentDiscountedByPackage__c","SBQQ__ComponentListTotal__c","SBQQ__ComponentSubscriptionScope__c","SBQQ__ComponentTotal__c","SBQQ__ComponentUpliftedByPackage__c","SBQQ__ComponentVisibility__c","SBQQ__CompoundDiscountRate__c","SBQQ__ConfigurationRequired__c","SBQQ__ContractedPrice__c","SBQQ__CostEditable__c","SBQQ__Cost__c","SBQQ__CustomerPrice__c","SBQQ__CustomerTotal__c","SBQQ__DefaultSubscriptionTerm__c","SBQQ__Description__c","SBQQ__Dimension__c","SBQQ__DiscountScheduleType__c","SBQQ__DiscountSchedule__c","SBQQ__DiscountTier__c","SBQQ__Discount__c","SBQQ__DistributorDiscount__c","SBQQ__DynamicOptionId__c","SBQQ__EarliestValidAmendmentStartDate__c","SBQQ__EffectiveEndDate__c","SBQQ__EffectiveQuantity__c","SBQQ__EffectiveStartDate__c","SBQQ__EffectiveSubscriptionTerm__c","SBQQ__EndDate__c","SBQQ__Existing__c","SBQQ__Favorite__c","SBQQ__GenerateContractedPrice__c","SBQQ__GrossProfit__c","SBQQ__Group__c","SBQQ__Guidance__c","SBQQ__HasConsumptionSchedule__c","SBQQ__Hidden__c","SBQQ__Incomplete__c","SBQQ__ListPrice__c","SBQQ__ListTotal__c","SBQQ__MarkupAmount__c","SBQQ__MarkupRate__c","SBQQ__Markup__c","SBQQ__MaximumPrice__c","SBQQ__MinimumPrice__c","SBQQ__NetPrice__c","SBQQ__NetTotal__c","SBQQ__NonDiscountable__c","SBQQ__NonPartnerDiscountable__c","SBQQ__Number__c","SBQQ__OptionDiscountAmount__c","SBQQ__OptionDiscount__c","SBQQ__OptionLevel__c","SBQQ__OptionType__c","SBQQ__Optional__c","SBQQ__OriginalPrice__c","SBQQ__OriginalQuoteLineId__c","SBQQ__OriginalUnitCost__c","SBQQ__PackageCost__c","SBQQ__PackageListTotal__c","SBQQ__PackageProductCode__c","SBQQ__PackageProductDescription__c","SBQQ__PackageTotal__c","SBQQ__PartnerDiscount__c","SBQQ__PartnerPrice__c","SBQQ__PartnerTotal__c","SBQQ__PreviousSegmentPrice__c","SBQQ__PreviousSegmentUplift__c","SBQQ__PriceEditable__c","SBQQ__PricebookEntryId__c","SBQQ__PricingMethodEditable__c","SBQQ__PricingMethod__c","SBQQ__PriorQuantity__c","SBQQ__ProductCode__c","SBQQ__ProductFamily__c","SBQQ__ProductName__c","SBQQ__ProductOption__c","SBQQ__ProductSubscriptionType__c","SBQQ__Product__c","SBQQ__ProrateMultiplier__c","SBQQ__ProratedListPrice__c","SBQQ__ProratedPrice__c","SBQQ__Quantity__c","SBQQ__Quote__c","SBQQ__RegularPrice__c","SBQQ__RegularTotal__c","SBQQ__Renewal__c","SBQQ__RenewedAsset__c","SBQQ__RenewedSubscription__c","SBQQ__RequiredBy__c","SBQQ__SegmentIndex__c","SBQQ__SegmentKey__c","SBQQ__SegmentLabel__c","SBQQ__Source__c","SBQQ__SpecialPriceDescription__c","SBQQ__SpecialPriceType__c","SBQQ__SpecialPrice__c","SBQQ__StartDate__c","SBQQ__SubscribedAssetIds__c","SBQQ__SubscriptionBase__c","SBQQ__SubscriptionCategory__c","SBQQ__SubscriptionPercent__c","SBQQ__SubscriptionPricing__c","SBQQ__SubscriptionScope__c","SBQQ__SubscriptionTargetPrice__c","SBQQ__SubscriptionTerm__c","SBQQ__SubscriptionType__c","SBQQ__TaxCode__c","SBQQ__Taxable__c","SBQQ__TermDiscountSchedule__c","SBQQ__TermDiscountTier__c","SBQQ__TermDiscount__c","SBQQ__TotalDiscountAmount__c","SBQQ__TotalDiscountRate__c","SBQQ__UnitCost__c","SBQQ__UnproratedNetPrice__c","SBQQ__UpgradedAsset__c","SBQQ__UpgradedQuantity__c","SBQQ__UpgradedSubscription__c","SBQQ__UpliftAmount__c","SBQQ__Uplift__c","SBQQ__VolumeDiscount__c"],"Cleanup":["Id","Name"]},"SBQQ__Subscription__c":{"Migration":["CreatedDate","External_ID__c","Id","LastModifiedDate","Name","OwnerId"],"Audit":["CreatedById","CreatedDate","Id","IsDeleted","LastModifiedById","LastModifiedDate","Name","OwnerId","SystemModstamp"],"CPQ":["Id","Name","SBQQ__Account__c","SBQQ__AdditionalDiscountAmount__c","SBQQ__BillingFrequency__c","SBQQ__BillingType__c","SBQQ__Bundle__c","SBQQ__BundledQuantity__c","SBQQ__Bundled__c","SBQQ__ChargeType__c","SBQQ__ComponentDiscountedByPackage__c","SBQQ__ComponentSubscriptionScope__c","SBQQ__ContractNumber__c","SBQQ__Contract__c","SBQQ__CreditProductId__c","SBQQ__CustomerPrice__c","SBQQ__DimensionType__c","SBQQ__Dimension__c","SBQQ__DiscountScheduleType__c","SBQQ__DiscountSchedule__c","SBQQ__Discount__c","SBQQ__DistributorDiscount__c","SBQQ__DynamicOptionId__c","SBQQ__EndDate__c","SBQQ__HasConsumptionSchedule__c","SBQQ__ListPrice__c","SBQQ__MarkupAmount__c","SBQQ__MarkupRate__c","SBQQ__NetPrice__c","SBQQ__Number__c","SBQQ__OptionDiscountAmount__c","SBQQ__OptionDiscount__c","SBQQ__OptionLevel__c","SBQQ__OptionType__c","SBQQ__OrderProduct__c","SBQQ__OriginalQuoteLine__c","SBQQ__OriginalUnitCost__c","SBQQ__PackageProductCode__c","SBQQ__PackageProductDescription__c","SBQQ__PartnerDiscount__c","SBQQ__PricingMethod__c","SBQQ__ProductId__c","SBQQ__ProductName__c","SBQQ__ProductOption__c","SBQQ__ProductSubscriptionType__c","SBQQ__Product__c","SBQQ__ProrateMultiplier__c","SBQQ__Quantity__c","SBQQ__QuoteLine__c","SBQQ__RegularPrice__c","SBQQ__RenewalPrice__c","SBQQ__RenewalProductId__c","SBQQ__RenewalProductOptionId__c","SBQQ__RenewalProductOptionProductId__c","SBQQ__RenewalProductOptionSubscriptionPricing__c","SBQQ__RenewalQuantity__c","SBQQ__RenewalUpliftRate__c","SBQQ__RenewedDate__c","SBQQ__RequiredById__c","SBQQ__RequiredByProduct__c","SBQQ__RevisedSubscription__c","SBQQ__RootId__c","SBQQ__SegmentEndDate__c","SBQQ__SegmentIndex__c","SBQQ__SegmentKey__c","SBQQ__SegmentLabel__c","SBQQ__SegmentQuantity__c","SBQQ__SegmentStartDate__c","SBQQ__SegmentUpliftAmount__c","SBQQ__SegmentUplift__c","SBQQ__SpecialPrice__c","SBQQ__StartDate__c","SBQQ__SubscriptionEndDate__c","SBQQ__SubscriptionPricing__c","SBQQ__SubscriptionStartDate__c","SBQQ__SubscriptionType__c","SBQQ__TermDiscountSchedule__c","SBQQ__TerminatedDate__c","SBQQ__UnitCost__c"],"Cleanup":["Id","Name","OwnerId"]},"OpportunityLineItem":{"Migration":["CreatedDate","Description","External_ID__c","Id","LastModifiedDate","ListPrice","Name","Product2Id","Quantity","TotalPrice","UnitPrice"],"Audit":["CreatedById","CreatedDate","Id","IsDeleted","LastModifiedById","LastModifiedDate","Name","SystemModstamp"],"CPQ":["Id","Name","SBQQ__ParentID__c","SBQQ__QuoteLine__c","SBQQ__SubscriptionType__c"],"Cleanup":["Description","Id","Name"]},"AdminRequest__c":{"Migration":["Id","Name","OwnerId","RecordTypeId","CreatedDate","LastModifiedDate","ExternalId__c","External_Requester_Email__c","Title__c","Area__c","Description__c","Resolution__c","Request_Status__c","Completed_Date__c","Assigned_To__c","Severity__c","Priority__c","Department__c","Scope__c","System__c","Feature__c","TypeofRequest__c"],"Audit":["Id","Name","OwnerId","CreatedById","CreatedDate","LastModifiedById","LastModifiedDate","Request_Status__c","Completed_Date__c","Assigned_To__c"],"CPQ":["Id","Name","Title__c","Area__c","Request_Status__c"],"Cleanup":["Id","Name","Title__c","Description__c","Resolution__c","Request_Status__c","Area__c","Severity__c","Priority__c"]}};
+
+const OBJ_LABELS = {
+  Account:"Account", Contact:"Contact", Opportunity:"Opportunity",
+  Contract:"Contract", "SBQQ__Quote__c":"Quote", "SBQQ__QuoteLine__c":"Quote Line",
+  "SBQQ__Subscription__c":"Subscription", OpportunityLineItem:"Opp Product",
+  "AdminRequest__c":"Admin Request"
+};
+const OBJ_KEYS = Object.keys(FIELD_DATA);
+const CAT_LABELS = { s:"Standard", c:"CPQ / SBQQ", e:"External IDs", x:"Custom" };
+const CAT_COLORS = { s:B.coolWhite, c:"#f97316", e:"#22c55e", x:B.lilac };
+const WHERE_OPS = ["=","!=","LIKE",">","<",">=","<=","IN","NOT IN","= null","!= null","= TRUE","= FALSE"];
+const DATE_LIT = ["TODAY","YESTERDAY","LAST_WEEK","THIS_WEEK","LAST_MONTH","THIS_MONTH","LAST_QUARTER","THIS_QUARTER","LAST_YEAR","THIS_YEAR","LAST_N_DAYS:7","LAST_N_DAYS:30","LAST_N_DAYS:90"];
+const PRESET_KEYS = ["Migration","Audit","CPQ","Cleanup"];
+const PRESET_COLORS = { Migration:"#22c55e", Audit:B.purple, CPQ:"#f97316", Cleanup:B.sunflower };
+const ss = { fontFamily:"'Source Sans 3','Segoe UI',sans-serif" };
+const mono = { fontFamily:"'Source Code Pro','Consolas',monospace" };
+
+function toast(msg) {
+  const el = document.createElement("div");
+  el.textContent = msg;
+  Object.assign(el.style, { position:"fixed",bottom:"20px",right:"20px",background:B.purple,color:B.coolWhite,padding:"10px 20px",borderRadius:"6px",fontSize:"13px",fontWeight:"600",zIndex:"9999",animation:"fadeio 2s ease",pointerEvents:"none" });
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2100);
+}
+
+function Btn({children, primary, small, onClick, disabled, style:sx}) {
+  return <button onClick={onClick} disabled={disabled} style={{
+    padding:small?"4px 10px":"7px 16px", borderRadius:5, fontSize:small?10:11, fontWeight:600,
+    border:primary?"1px solid "+B.purple:"1px solid "+B.border,
+    background:primary?"rgba(119,94,211,0.15)":"transparent",
+    color:primary?B.lilac:B.textMuted, cursor:disabled?"default":"pointer",
+    fontFamily:"inherit", opacity:disabled?0.35:1, transition:"all 0.15s", ...sx
+  }}>{children}</button>;
+}
+
+/* Storage helpers - use window.storage in artifact, fallback to localStorage */
+async function loadPresets() {
+  try {
+    if (window.storage) {
+      const r = await window.storage.get("soql-presets-v2", true);
+      return r?.value ? JSON.parse(r.value) : {};
+    }
+  } catch(e) {}
+  try { return JSON.parse(localStorage.getItem("soql-presets-v2")||"{}"); } catch(e) { return {}; }
+}
+async function savePresetsStore(data) {
+  const str = JSON.stringify(data);
+  try { if (window.storage) { await window.storage.set("soql-presets-v2", str, true); return; } } catch(e) {}
+  try { localStorage.setItem("soql-presets-v2", str); } catch(e) {}
+}
+
+function SOQLBuilder() {
+  const [obj, setObj] = useState("Account");
+  const [selected, setSelected] = useState(new Set(DEFAULT_PRESETS.Account?.Migration || ["Id"]));
+  const [activePreset, setActivePreset] = useState("Migration");
+  const [search, setSearch] = useState("");
+  const [collapsed, setCollapsed] = useState({ s:true, c:true, e:true, x:true });
+  const [wheres, setWheres] = useState([]);
+  const [orderBy, setOrderBy] = useState("");
+  const [orderDir, setOrderDir] = useState("ASC");
+  const [limit, setLimit] = useState("");
+  const [customPresets, setCustomPresets] = useState({});
+  const [presetName, setPresetName] = useState("");
+  const [showSave, setShowSave] = useState(false);
+  const [showManage, setShowManage] = useState(false);
+
+  useEffect(() => { loadPresets().then(setCustomPresets); }, []);
+
+  const doSave = async (updated) => { setCustomPresets(updated); await savePresetsStore(updated); };
+
+  const fd = FIELD_DATA[obj] || { s:[], c:[], e:[], x:[] };
+  const allFields = [...(fd.s||[]), ...(fd.c||[]), ...(fd.e||[]), ...(fd.x||[])];
+
+  const switchObj = (o) => {
+    setObj(o);
+    setSelected(new Set(DEFAULT_PRESETS[o]?.Migration || ["Id"]));
+    setActivePreset("Migration");
+    setSearch(""); setWheres([]); setOrderBy(""); setLimit("");
+  };
+
+  const applyPreset = (key) => {
+    const cpKey = obj+"::"+key;
+    const fields = customPresets[cpKey] || DEFAULT_PRESETS[obj]?.[key] || ["Id"];
+    setSelected(new Set(fields));
+    setActivePreset(key);
+  };
+
+  const toggle = (f) => {
+    const n = new Set(selected);
+    n.has(f) ? n.delete(f) : n.add(f);
+    setSelected(n); setActivePreset(null);
+  };
+
+  const selectCat = (cat) => {
+    const n = new Set(selected);
+    const fields = fd[cat] || [];
+    const allSel = fields.every(f => n.has(f));
+    fields.forEach(f => allSel ? n.delete(f) : n.add(f));
+    if (!n.has("Id")) n.add("Id");
+    setSelected(n); setActivePreset(null);
+  };
+
+  const collapseAll = () => setCollapsed({ s:true, c:true, e:true, x:true });
+  const expandAll = () => setCollapsed({ s:false, c:false, e:false, x:false });
+
+  const savePreset = async () => {
+    if (!presetName.trim()) return;
+    const key = obj+"::"+presetName.trim();
+    const updated = { ...customPresets, [key]: [...selected] };
+    await doSave(updated);
+    setPresetName(""); setShowSave(false); setActivePreset(presetName.trim());
+    toast("Saved \""+presetName.trim()+"\" for "+(OBJ_LABELS[obj]||obj));
+  };
+
+  const deletePreset = async (key) => {
+    const updated = { ...customPresets }; delete updated[key];
+    await doSave(updated); toast("Preset deleted");
+  };
+
+  const objCustom = Object.keys(customPresets).filter(k => k.startsWith(obj+"::")).map(k => k.split("::")[1]);
+
+  const addWhere = () => setWheres(p => [...p, { field:"", op:"=", value:"", logic:p.length?"AND":"" }]);
+  const updWhere = (i,k,v) => setWheres(p => p.map((w,j) => j===i ? {...w,[k]:v} : w));
+  const rmWhere = (i) => setWheres(p => p.filter((_,j) => j!==i));
+
+  const soql = (() => {
+    const fields = [...selected].sort((a,b) => a==="Id"?-1:b==="Id"?1:a.localeCompare(b));
+    if (!fields.length) return "-- Select at least one field";
+    let q = "SELECT "+fields.join(",\n       ")+"\nFROM "+obj;
+    const vw = wheres.filter(w => w.field && w.op);
+    if (vw.length) {
+      const parts = vw.map((w,i) => {
+        let c = i>0 ? " "+(w.logic||"AND")+" " : "";
+        c += w.field+" ";
+        if (["= null","!= null","= TRUE","= FALSE"].includes(w.op)) c += w.op;
+        else if (w.op==="IN"||w.op==="NOT IN") c += w.op+" ("+w.value+")";
+        else if (w.op==="LIKE") c += "LIKE '"+w.value+"'";
+        else if (DATE_LIT.some(d => w.value.toUpperCase().startsWith(d.split(":")[0]))) c += w.op+" "+w.value;
+        else if (/^\d+(\.\d+)?$/.test(w.value)||w.value==="true"||w.value==="false") c += w.op+" "+w.value;
+        else c += w.op+" '"+w.value+"'";
+        return c;
+      });
+      q += "\nWHERE "+parts.join("\n      ");
+    }
+    if (orderBy) q += "\nORDER BY "+orderBy+" "+orderDir;
+    if (limit) q += "\nLIMIT "+limit;
+    return q;
+  })();
+
+  const filterField = (f) => !search || f.toLowerCase().includes(search.toLowerCase());
+
+  return (
+    <div style={{ minHeight:"100vh", background:B.navy, color:B.coolWhite, ...ss }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:#252E4A;border-radius:3px}
+        input::placeholder,textarea::placeholder{color:#9BA3BF;opacity:0.5}
+        select,input,textarea{outline:none;font-family:inherit} input:focus,select:focus{border-color:#775ED3!important}
+        @keyframes fadeio{0%{opacity:0;transform:translateY(10px)}15%{opacity:1;transform:translateY(0)}85%{opacity:1}100%{opacity:0}}
+      `}</style>
+
+      {/* Header */}
+      <div style={{ padding:"14px 20px", borderBottom:"1px solid "+B.border, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ width:8, height:8, borderRadius:"50%", background:"linear-gradient(135deg,"+B.gradA+","+B.gradB+")" }}/>
+            <span style={{ fontWeight:700, fontSize:16 }}>NEUMO</span>
+            <span style={{ fontWeight:300, fontSize:16, color:B.lilac }}>SOQL Builder</span>
+          </div>
+          <div style={{ fontSize:10, color:B.textMuted, paddingLeft:16, ...mono }}>
+            {allFields.length} fields on {OBJ_LABELS[obj]||obj} · {OBJ_KEYS.length} objects · Live schema Apr 2026
+          </div>
+        </div>
+        <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", borderRadius:3, background:"rgba(239,231,69,0.15)", color:B.sunflower }}>v2.1</span>
+      </div>
+
+      {/* Object tabs */}
+      <div style={{ padding:"8px 20px", borderBottom:"1px solid "+B.border, display:"flex", gap:4, flexWrap:"wrap" }}>
+        {OBJ_KEYS.map(o => (
+          <button key={o} onClick={() => switchObj(o)} style={{
+            padding:"5px 12px", borderRadius:4, fontSize:11, fontWeight:obj===o?700:400,
+            border:obj===o?"1px solid "+B.purple:"1px solid "+B.border,
+            background:obj===o?"rgba(119,94,211,0.15)":"transparent",
+            color:obj===o?B.lilac:B.textMuted, cursor:"pointer", ...ss
+          }}>{OBJ_LABELS[o]||o}</button>
+        ))}
+      </div>
+
+      {/* Presets bar */}
+      <div style={{ padding:"8px 20px", borderBottom:"1px solid "+B.border, display:"flex", gap:4, flexWrap:"wrap", alignItems:"center" }}>
+        <span style={{ fontSize:10, color:B.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginRight:2 }}>Presets</span>
+        {PRESET_KEYS.map(k => (
+          <button key={k} onClick={() => applyPreset(k)} style={{
+            padding:"4px 10px", borderRadius:3, fontSize:10, fontWeight:600,
+            border:activePreset===k?"1px solid "+(PRESET_COLORS[k]):"1px solid "+B.border,
+            background:activePreset===k?(PRESET_COLORS[k])+"18":"transparent",
+            color:activePreset===k?PRESET_COLORS[k]:B.textMuted, cursor:"pointer", ...ss,
+            textTransform:"uppercase", letterSpacing:"0.04em"
+          }}>{k}</button>
+        ))}
+        {objCustom.length>0 && <>
+          <div style={{ width:1, height:16, background:B.border, margin:"0 2px" }}/>
+          {objCustom.map(k => (
+            <button key={k} onClick={() => applyPreset(k)} style={{
+              padding:"4px 10px", borderRadius:3, fontSize:10, fontWeight:600,
+              border:activePreset===k?"1px solid "+B.lilac:"1px solid "+B.border,
+              background:activePreset===k?"rgba(218,205,242,0.1)":"transparent",
+              color:activePreset===k?B.lilac:B.textMuted, cursor:"pointer", ...ss
+            }}>{String.fromCharCode(9733)} {k}</button>
+          ))}
+        </>}
+        <div style={{ marginLeft:"auto", display:"flex", gap:4 }}>
+          <Btn small onClick={() => { setSelected(new Set(allFields)); setActivePreset(null); }}>All</Btn>
+          <Btn small onClick={() => { setSelected(new Set(["Id"])); setActivePreset(null); }}>None</Btn>
+          <Btn small primary onClick={() => setShowSave(!showSave)}>Save Preset</Btn>
+          {Object.keys(customPresets).length>0 && <Btn small onClick={() => setShowManage(!showManage)}>Manage</Btn>}
+        </div>
+      </div>
+
+      {/* Save preset panel */}
+      {showSave && (
+        <div style={{ padding:"10px 20px", borderBottom:"1px solid "+B.border, background:"rgba(119,94,211,0.03)", display:"flex", gap:8, alignItems:"center" }}>
+          <span style={{ fontSize:11, color:B.textMuted }}>Save {selected.size} fields as:</span>
+          <input value={presetName} onChange={e => setPresetName(e.target.value)} placeholder="Preset name..."
+            onKeyDown={e => e.key==="Enter" && savePreset()}
+            style={{ padding:"5px 10px", borderRadius:4, border:"1px solid "+B.border, background:B.navyMid, color:B.coolWhite, fontSize:11, width:180, ...ss }}/>
+          <Btn small primary onClick={savePreset} disabled={!presetName.trim()}>Save (shared)</Btn>
+          <Btn small onClick={() => setShowSave(false)}>Cancel</Btn>
+        </div>
+      )}
+
+      {/* Manage presets */}
+      {showManage && (
+        <div style={{ padding:"10px 20px", borderBottom:"1px solid "+B.border, background:"rgba(119,94,211,0.03)" }}>
+          <div style={{ fontSize:11, fontWeight:600, color:B.coolWhite, marginBottom:6 }}>Custom Presets</div>
+          {Object.entries(customPresets).map(([key, fields]) => {
+            const [o, name] = key.split("::");
+            return (
+              <div key={key} style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4 }}>
+                <span style={{ fontSize:10, color:B.textMuted, ...mono, minWidth:100 }}>{OBJ_LABELS[o]||o}</span>
+                <span style={{ fontSize:11, color:B.lilac, fontWeight:600 }}>{String.fromCharCode(9733)} {name}</span>
+                <span style={{ fontSize:10, color:B.textMuted }}>({fields.length} fields)</span>
+                <button onClick={() => deletePreset(key)} style={{ background:"none", border:"none", color:B.textMuted, cursor:"pointer", fontSize:10 }}>delete</button>
+              </div>
+            );
+          })}
+          <Btn small onClick={() => setShowManage(false)} style={{ marginTop:6 }}>Close</Btn>
+        </div>
+      )}
+
+      <div style={{ display:"flex", minHeight:"calc(100vh - 150px)" }}>
+        {/* LEFT */}
+        <div style={{ flex:"1 1 50%", borderRight:"1px solid "+B.border, display:"flex", flexDirection:"column" }}>
+          {/* Search + collapse controls */}
+          <div style={{ padding:"8px 20px", borderBottom:"1px solid "+B.border, display:"flex", gap:8, alignItems:"center" }}>
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder={"Search "+allFields.length+" fields..."}
+              style={{ flex:1, padding:"6px 10px", borderRadius:4, border:"1px solid "+B.border, background:B.navyMid, color:B.coolWhite, fontSize:11, ...ss }}/>
+            <Btn small onClick={expandAll}>Expand All</Btn>
+            <Btn small onClick={collapseAll}>Collapse All</Btn>
+          </div>
+
+          {/* Field categories */}
+          <div style={{ flex:1, overflowY:"auto", padding:"8px 0" }}>
+            {Object.entries(CAT_LABELS).map(([cat, label]) => {
+              const fields = (fd[cat]||[]).filter(filterField);
+              if (!fields.length) return null;
+              const isC = collapsed[cat];
+              const catSel = fields.filter(f => selected.has(f)).length;
+              return (
+                <div key={cat} style={{ marginBottom:4 }}>
+                  <div onClick={() => setCollapsed({...collapsed, [cat]:!isC})}
+                    style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 20px", cursor:"pointer", userSelect:"none" }}>
+                    <span style={{ fontSize:12, color:B.textMuted, transform:isC?"rotate(-90deg)":"rotate(0)", transition:"transform 0.15s", display:"inline-block" }}>{String.fromCharCode(9662)}</span>
+                    <span style={{ fontSize:10, fontWeight:700, color:CAT_COLORS[cat], textTransform:"uppercase", letterSpacing:"0.06em" }}>{label}</span>
+                    <span style={{ fontSize:10, color:B.textMuted, ...mono }}>{catSel}/{fields.length}</span>
+                    <button onClick={e => { e.stopPropagation(); selectCat(cat); }}
+                      style={{ marginLeft:"auto", fontSize:9, color:B.textMuted, background:"none", border:"1px solid "+B.border, borderRadius:3, padding:"2px 6px", cursor:"pointer", ...ss }}>
+                      {catSel===fields.length?"deselect":"select all"}
+                    </button>
+                  </div>
+                  {!isC && (
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, padding:"0 20px" }}>
+                      {fields.map(f => {
+                        const sel = selected.has(f);
+                        return (
+                          <label key={f} style={{
+                            display:"flex", alignItems:"center", gap:5, padding:"3px 6px", borderRadius:2,
+                            cursor:"pointer", fontSize:10, color:sel?B.coolWhite:B.textMuted,
+                            background:sel?"rgba(119,94,211,0.06)":"transparent", ...mono,
+                            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                          }}>
+                            <input type="checkbox" checked={sel} onChange={() => toggle(f)} style={{ accentColor:B.purple, flexShrink:0 }}/>
+                            <span title={f} style={{ overflow:"hidden", textOverflow:"ellipsis" }}>{f}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* WHERE + ORDER + LIMIT */}
+          <div style={{ padding:"10px 20px", borderTop:"1px solid "+B.border }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+              <span style={{ fontSize:10, color:B.textMuted, textTransform:"uppercase", letterSpacing:"0.06em" }}>WHERE</span>
+              <Btn small onClick={addWhere}>+ Condition</Btn>
+            </div>
+            {wheres.map((w,i) => (
+              <div key={i} style={{ display:"flex", gap:3, alignItems:"center", marginBottom:3 }}>
+                {i>0 ? <select value={w.logic} onChange={e=>updWhere(i,"logic",e.target.value)} style={{ width:50, padding:"3px", borderRadius:3, border:"1px solid "+B.border, background:B.navyMid, color:B.lilac, fontSize:9, ...mono }}>
+                  <option value="AND">AND</option><option value="OR">OR</option>
+                </select> : <div style={{width:50}}/>}
+                <select value={w.field} onChange={e=>updWhere(i,"field",e.target.value)} style={{ flex:2, padding:"4px 5px", borderRadius:3, border:"1px solid "+B.border, background:B.navyMid, color:B.coolWhite, fontSize:10, ...mono }}>
+                  <option value="">field...</option>{allFields.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+                <select value={w.op} onChange={e=>updWhere(i,"op",e.target.value)} style={{ width:70, padding:"4px 3px", borderRadius:3, border:"1px solid "+B.border, background:B.navyMid, color:B.lilac, fontSize:10, ...mono }}>
+                  {WHERE_OPS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+                {!["= null","!= null","= TRUE","= FALSE"].includes(w.op) &&
+                  <input value={w.value} onChange={e=>updWhere(i,"value",e.target.value)} placeholder="value"
+                    style={{ flex:2, padding:"4px 5px", borderRadius:3, border:"1px solid "+B.border, background:B.navyMid, color:B.coolWhite, fontSize:10, ...mono }}/>}
+                <button onClick={() => rmWhere(i)} style={{ background:"none", border:"none", color:B.textMuted, cursor:"pointer", fontSize:11 }}>{String.fromCharCode(10005)}</button>
+              </div>
+            ))}
+            <div style={{ display:"flex", gap:8, marginTop:8 }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:9, color:B.textMuted, textTransform:"uppercase", marginBottom:2 }}>Order By</div>
+                <div style={{ display:"flex", gap:3 }}>
+                  <select value={orderBy} onChange={e=>setOrderBy(e.target.value)} style={{ flex:1, padding:"4px 5px", borderRadius:3, border:"1px solid "+B.border, background:B.navyMid, color:B.coolWhite, fontSize:10, ...mono }}>
+                    <option value="">None</option>{[...selected].sort().map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                  <select value={orderDir} onChange={e=>setOrderDir(e.target.value)} style={{ width:50, padding:"4px 3px", borderRadius:3, border:"1px solid "+B.border, background:B.navyMid, color:B.lilac, fontSize:10, ...mono }}>
+                    <option value="ASC">ASC</option><option value="DESC">DESC</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ width:70 }}>
+                <div style={{ fontSize:9, color:B.textMuted, textTransform:"uppercase", marginBottom:2 }}>Limit</div>
+                <input value={limit} onChange={e=>setLimit(e.target.value.replace(/\D/g,""))} placeholder="200"
+                  style={{ width:"100%", padding:"4px 5px", borderRadius:3, border:"1px solid "+B.border, background:B.navyMid, color:B.coolWhite, fontSize:10, ...mono }}/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: output */}
+        <div style={{ flex:"1 1 50%", padding:16, display:"flex", flexDirection:"column", background:B.navyLight }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+            <span style={{ fontSize:10, color:B.textMuted, textTransform:"uppercase", letterSpacing:"0.06em" }}>Generated SOQL</span>
+            <span style={{ fontSize:10, color:B.textMuted, ...mono }}>{selected.size} fields</span>
+          </div>
+          <pre style={{
+            flex:1, padding:14, background:B.navyMid, borderRadius:6, border:"1px solid "+B.border,
+            fontSize:11, color:B.coolWhite, lineHeight:1.7, ...mono,
+            whiteSpace:"pre-wrap", wordBreak:"break-all", overflowY:"auto", margin:0,
+          }}>{soql}</pre>
+          <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
+            <Btn primary onClick={() => { navigator.clipboard.writeText(soql); toast("SOQL copied!"); }}>Copy SOQL</Btn>
+            <Btn onClick={() => { navigator.clipboard.writeText("Object: "+obj+"\nPreset: "+(activePreset||"Custom")+"\nFields: "+selected.size+"\n\n"+soql); toast("Copied with context!"); }}>Copy + Context</Btn>
+          </div>
+
+          {/* Quick queries */}
+          <div style={{ marginTop:14, borderTop:"1px solid "+B.border, paddingTop:10 }}>
+            <div style={{ fontSize:10, color:B.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>Quick Queries</div>
+            <div style={{ display:"flex", gap:3, flexWrap:"wrap" }}>
+              {obj==="Account" && <>
+                <Btn small onClick={()=>setWheres([{field:"CreatedDate",op:"=",value:"LAST_MONTH",logic:""}])}>Created Last Month</Btn>
+                <Btn small onClick={()=>setWheres([{field:"LastActivityDate",op:"= null",value:"",logic:""}])}>No Activity</Btn>
+              </>}
+              {obj==="Contact" && <>
+                <Btn small onClick={()=>setWheres([{field:"Email",op:"= null",value:"",logic:""}])}>Missing Email</Btn>
+                <Btn small onClick={()=>setWheres([{field:"AccountId",op:"= null",value:"",logic:""}])}>Orphaned</Btn>
+              </>}
+              {obj==="Opportunity" && <>
+                <Btn small onClick={()=>setWheres([{field:"IsClosed",op:"= FALSE",value:"",logic:""},{field:"CloseDate",op:"<",value:"TODAY",logic:"AND"}])}>Open Past Due</Btn>
+                <Btn small onClick={()=>setWheres([{field:"StageName",op:"=",value:"Closed Won",logic:""},{field:"CloseDate",op:">=",value:"THIS_QUARTER",logic:"AND"}])}>Won This Qtr</Btn>
+                <Btn small onClick={()=>setWheres([{field:"SBQQ__PrimaryQuote__c",op:"= null",value:"",logic:""},{field:"IsClosed",op:"= FALSE",value:"",logic:"AND"}])}>No Quote</Btn>
+              </>}
+              {obj==="Contract" && <>
+                <Btn small onClick={()=>setWheres([{field:"Status",op:"=",value:"Activated",logic:""}])}>Active</Btn>
+                <Btn small onClick={()=>setWheres([{field:"EndDate",op:"<=",value:"NEXT_N_DAYS:90",logic:""},{field:"Status",op:"=",value:"Activated",logic:"AND"}])}>Expiring 90d</Btn>
+              </>}
+              {obj==="AdminRequest__c" && <>
+                <Btn small onClick={()=>setWheres([{field:"Request_Status__c",op:"=",value:"Closed",logic:""},{field:"Completed_Date__c",op:"=",value:"LAST_WEEK",logic:"AND"}])}>Closed Last Week</Btn>
+                <Btn small onClick={()=>setWheres([{field:"Request_Status__c",op:"!=",value:"Closed",logic:""}])}>Open Requests</Btn>
+                <Btn small onClick={()=>setWheres([{field:"Severity__c",op:"=",value:"High",logic:""}])}>High Severity</Btn>
+              </>}
+              {obj==="SBQQ__Quote__c" && <>
+                <Btn small onClick={()=>setWheres([{field:"SBQQ__Status__c",op:"=",value:"Draft",logic:""}])}>Draft</Btn>
+                <Btn small onClick={()=>setWheres([{field:"SBQQ__Primary__c",op:"= TRUE",value:"",logic:""}])}>Primary</Btn>
+              </>}
+              <Btn small onClick={()=>setWheres([])}>Clear</Btn>
+            </div>
+            {wheres.length>0 && <div style={{ marginTop:4, fontSize:9, color:B.textMuted }}>Date literals: TODAY {String.fromCharCode(183)} LAST_WEEK {String.fromCharCode(183)} THIS_MONTH {String.fromCharCode(183)} LAST_N_DAYS:30</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(<SOQLBuilder/>);
+</script>
+</body>
+</html>
