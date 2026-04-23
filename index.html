@@ -318,7 +318,7 @@ function ToolCard({tool,expanded,onToggle,onLaunch}){
       <div style={{marginTop:8,display:"flex",gap:4,flexWrap:"wrap"}}>{tool.tags.map(t=><Tag key={t}>#{t}</Tag>)}</div>
       {tool.status==="built"&&<div style={{marginTop:12}}>
         {tool.externalUrl
-          ? <Btn primary onClick={e=>{e.stopPropagation();window.open(tool.externalUrl,"_blank");}}>Open in Power Automate ↗</Btn>
+          ? <Btn primary onClick={e=>{e.stopPropagation();window.open(tool.externalUrl,"_blank");}}>Open External Link ↗</Btn>
           : <Btn primary onClick={e=>{e.stopPropagation();onLaunch(tool.id);}}>Open Tool</Btn>}
       </div>}
     </div>}
