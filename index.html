@@ -62,8 +62,9 @@ const PA_FLOW_URL3 = "https://make.powerautomate.com/environments/Default-a9e33a
 
 const TOOLS = [
   { id:"soql-builder", name:"SOQL Query Builder", category:"Data & Migration", status:"built", platform:"Toolkit", priority:"High", effort:"Medium",
-    description:"Visual SOQL builder with preset field selections for Account, Contact, and Opportunity. Migration, Audit, Cleanup, and CPQ presets.",
-    tags:["data","migration","query","soql"], details:"Presets auto-select field groups. Upload SF Inspector field metadata to add custom fields. WHERE clause builder with common operators." },
+    description:"1,383 live fields across 9 objects. Migration, Audit, Cleanup, and CPQ presets. Custom presets with persistent storage.",
+    tags:["data","migration","query","soql"], details:"9 objects: Account, Contact, Opportunity, Contract, Quote, Quote Line, Subscription, Opp Product, Admin Request. Fields grouped by Standard, CPQ, External IDs, Custom. Search, saveable presets. WHERE clause builder with SOQL date literals.",
+    externalUrl: "soql-builder.html" },
   { id:"change-doc", name:"Change Documentation Generator", category:"Documentation", status:"built", platform:"Toolkit", priority:"High", effort:"Medium",
     description:"Guided flow to capture system changes and auto-generate formatted documentation. Single and batch modes feed the weekly Admin Newsletter.",
     tags:["documentation","change management","newsletter","admin request"], details:"Single mode: guided form. Batch mode: paste Admin Request CSV export from Salesforce Inspector. Newsletter groups by Area with 150-char blurbs in Neumo brand voice." },
@@ -345,9 +346,9 @@ function ToolFinder({onClose,onLaunch}){
 /* ═══════════ MAIN APP ═══════════ */
 function App(){
   const[view,setView]=useState("hub");const[expandedTool,setExpandedTool]=useState(null);const[filterCat,setFilterCat]=useState("All");const[search,setSearch]=useState("");const[showFinder,setShowFinder]=useState(false);
-  const launch=useCallback((id)=>{if(id==="change-doc")setView("tool:change-doc");if(id==="soql-builder")setView("tool:soql-builder");},[]);
+  const launch=useCallback((id)=>{if(id==="change-doc")setView("tool:change-doc");if(id==="soql-builder")window.open("soql-builder.html","_blank");},[]);
   if(view==="tool:change-doc")return <ChangeDocGenerator onBack={()=>setView("hub")}/>;
-  if(view==="tool:soql-builder")return <SOQLBuilder onBack={()=>setView("hub")}/>;
+
   const filtered=TOOLS.filter(t=>{if(filterCat!=="All"&&t.category!==filterCat)return false;if(search&&!`${t.name} ${t.description} ${t.tags.join(" ")}`.toLowerCase().includes(search.toLowerCase()))return false;return true;});
   const stats={total:TOOLS.length,built:TOOLS.filter(t=>t.status==="built").length,progress:TOOLS.filter(t=>t.status==="in-progress").length,planned:TOOLS.filter(t=>t.status==="planned").length};
   return (
